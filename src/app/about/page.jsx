@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Activity, ShieldCheck, Cpu, Globe, Crosshair } from 'lucide-react';
-import Navbar from '../Navbar';
+import Navbar from '../../components/Navbar';
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden flex flex-col">

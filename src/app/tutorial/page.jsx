@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { ShieldCheck, ArrowRight, Receipt, Activity, ShieldAlert, CircleDollarSign, Calendar, User, Droplets, Wrench, MapPin } from 'lucide-react';
-import Navbar from '../Navbar';
+import Navbar from '../../components/Navbar';
+
 export default function TutorialPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden flex flex-col">
