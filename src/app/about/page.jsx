@@ -3,51 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { Activity, ShieldCheck, Cpu, Globe, Crosshair } from 'lucide-react';
-
+import Navbar from '../Navbar';
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden flex flex-col">
       
       {/* Navbar */}
-      <nav className="fixed top-0 w-full border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-md z-50">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-10">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-12 h-12 flex items-center justify-center">
-                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full overflow-visible">
-                    <defs>
-                        <filter id="glowSentinel" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1" />
-                            <feMerge>
-                                <feMergeNode in="blur1" />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                        </filter>
-                        <linearGradient id="gradSentinel" x1="32" y1="8" x2="32" y2="56" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stopColor="#0891b2" stopOpacity="0.15" />
-                            <stop offset="100%" stopColor="#020617" stopOpacity="0.9" />
-                        </linearGradient>
-                    </defs>
-                    <path d="M 32 10 C 50 10 60 32 60 32 C 60 32 50 54 32 54 C 14 54 4 32 4 32 C 4 32 14 10 32 10 Z" fill="url(#gradSentinel)" stroke="#22d3ee" strokeWidth="2.5" strokeLinejoin="round" filter="url(#glowSentinel)"/>
-                    <circle cx="32" cy="32" r="10" stroke="#06b6d4" strokeWidth="2.5" filter="url(#glowSentinel)"/>
-                    <circle cx="32" cy="32" r="3.5" fill="#ffffff" filter="url(#glowSentinel)"/>
-                    <path d="M 32 18 V 22 M 32 42 V 46 M 18 32 H 22 M 42 32 H 46" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
-              <span className="text-2xl font-bold tracking-wide text-white">
-                Sentinel<span className="text-cyan-400 font-light">Fleet</span>
-              </span>
-            </Link>
-            <div className="hidden md:flex items-center gap-6 text-sm font-bold uppercase tracking-widest text-slate-400">
-              <Link href="/tutorial" className="hover:text-cyan-400 transition-colors">Tutorial</Link>
-              <Link href="/about" className="text-cyan-400 transition-colors">About</Link>
-            </div>
-          </div>
-          <Link href="/" className="text-sm font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors">
-            Back to Home
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Main Content Area */}
       <div className="flex-1 max-w-4xl mx-auto px-6 pt-36 pb-24 space-y-20">
