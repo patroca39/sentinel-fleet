@@ -1,0 +1,15 @@
+[12:49:05] Initiating 24-Hour SentinelFleet Red Team Protocol...
+Simulation will conclude at: 2026-07-25 12:49:05
+
+[2026-07-24 12:49:05] Injecting Scenario: Traffic Jam (Idling) for UNIT-04...
+  -> Injection complete. System Alert: True. Next injection scheduled roughly at 13:13:45.
+
+[2026-07-24 13:52:01] Injecting Scenario: Traffic Jam (Idling) for UNIT-04...
+  -> Injection complete. System Alert: True. Next injection scheduled roughly at 14:31:34.
+
+Traceback (most recent call last):
+  File "C:\Users\Patrick Anthony Roca\Documents\supafleet-app\redteam_sim.py", line 74, in <module>
+    time.sleep(sleep_seconds)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^
+KeyboardInterrupt
+^C
