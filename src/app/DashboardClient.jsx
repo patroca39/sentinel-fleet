@@ -75,6 +75,26 @@ export default function DashboardClient({
       }
     }
   }, [session, subscriptionTier]);
+
+  // --- PAYMENT REDIRECT HANDLING ---
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      if (urlParams.get('payment') === 'success') {
+        // Optimistically unlock the UI while the webhook updates the DB in the background
+        setSubscriptionTier('PRO');
+        showToast("Payment successful! Premium features unlocked.", "success");
+        
+        // Clean up the URL so it doesn't trigger again on a normal page refresh
+        window.history.replaceState(null, '', window.location.pathname);
+      } 
+      else if (urlParams.get('payment') === 'cancelled') {
+        showToast("Payment was cancelled.", "info");
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, []);
   
   // --- LOCKOUT ENFORCEMENT LOGIC ---
   const isTrialExpired = useMemo(() => {

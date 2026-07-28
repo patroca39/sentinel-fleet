@@ -61,7 +61,11 @@ export default function UpgradeModal({
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-              <span className="text-slate-300 text-sm">Unlimited Vehicle Profiles</span>
+              <span className="text-slate-300 text-sm">Support for up to 4 vehicles</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+              <span className="text-slate-300 text-sm">Seamless scaling (₱250/mo per extra vehicle)</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
@@ -70,10 +74,6 @@ export default function UpgradeModal({
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
               <span className="text-slate-300 text-sm">Automated Maintenance Ledger</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-              <span className="text-slate-300 text-sm">Priority Support</span>
             </div>
           </div>
 
