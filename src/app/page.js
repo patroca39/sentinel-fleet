@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { createClient } from '@/utils/supabase/server';
 import DashboardClient from './DashboardClient';
 
@@ -21,7 +23,7 @@ export default async function FleetDashboard() {
     { data: anomaliesData }
   ] = await Promise.all([
     supabase.from('vehicle_specs').select('*').eq('operator_id', user.id).order('id', { ascending: false }),
-    // FIX: Explicitly using !fk_driver_vehicle to resolve the database ambiguity
+    // Explicitly using !fk_driver_vehicle to resolve database ambiguity
     supabase.from('drivers').select('*, vehicle_specs!fk_driver_vehicle(*)').eq('operator_id', user.id),
     supabase.from('fuel_market_rates').select('*').order('effective_timestamp', { ascending: false }),
     supabase.from('operator_profiles').select('subscription_tier').eq('id', user.id).single(),
@@ -49,7 +51,6 @@ export default async function FleetDashboard() {
   if (vehicles && vehicles.length > 0) {
     const vehicleIds = vehicles.map(v => v.id);
     const { data: mLogs } = await supabase
-      // FIX: Explicitly resolving ambiguity here as well to prevent future crashes
       .from('maintenance_logs')
       .select('*, vehicle_specs!fk_maintenance_vehicle(model_name)')
       .in('vehicle_id', vehicleIds)

@@ -76,25 +76,58 @@ export default function DashboardClient({
     }
   }, [session, subscriptionTier]);
 
-  // --- PAYMENT REDIRECT HANDLING ---
+  // --- SECURE PAYMENT REDIRECT & VERIFICATION LOGIC ---
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      
-      if (urlParams.get('payment') === 'success') {
-        // Optimistically unlock the UI while the webhook updates the DB in the background
-        setSubscriptionTier('PRO');
-        showToast("Payment successful! Premium features unlocked.", "success");
-        
-        // Clean up the URL so it doesn't trigger again on a normal page refresh
-        window.history.replaceState(null, '', window.location.pathname);
-      } 
-      else if (urlParams.get('payment') === 'cancelled') {
-        showToast("Payment was cancelled.", "info");
-        window.history.replaceState(null, '', window.location.pathname);
+    if (typeof window === 'undefined') return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+
+    if (paymentStatus === 'success') {
+      showToast("Verifying payment status with server...", "info");
+
+      let attempts = 0;
+      const maxAttempts = 5;
+
+      const verifyPayment = async () => {
+        const supabase = createClient();
+        const { data: profile } = await supabase
+          .from('operator_profiles')
+          .select('subscription_tier')
+          .eq('id', session?.user?.id)
+          .single();
+
+        if (profile?.subscription_tier === 'PRO') {
+          setSubscriptionTier('PRO');
+          showToast("Payment verified! Premium access unlocked.", "success");
+          window.history.replaceState(null, '', window.location.pathname);
+          return true;
+        }
+        return false;
+      };
+
+      const pollInterval = setInterval(async () => {
+        attempts += 1;
+        const verified = await verifyPayment();
+
+        if (verified || attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          if (!verified) {
+            showToast("Payment processing in background. Refresh in a moment if status hasn't updated.", "info");
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        }
+      }, 2000);
+
+      // Initial check immediately
+      if (session?.user?.id) {
+         verifyPayment();
       }
+    } else if (paymentStatus === 'cancelled') {
+      showToast("Payment checkout was cancelled.", "info");
+      window.history.replaceState(null, '', window.location.pathname);
     }
-  }, []);
+  }, [session]);
   
   // --- LOCKOUT ENFORCEMENT LOGIC ---
   const isTrialExpired = useMemo(() => {
