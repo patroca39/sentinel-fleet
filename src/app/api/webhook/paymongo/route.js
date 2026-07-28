@@ -4,7 +4,6 @@ import crypto from 'crypto';
 
 export async function POST(request) {
   try {
-    // 1. Capture the raw text body for cryptographic verification
     const rawBody = await request.text();
     const signatureHeader = request.headers.get('paymongo-signature');
     const webhookSecret = process.env.PAYMONGO_WEBHOOK_SECRET;
@@ -13,29 +12,35 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing signature or secret' }, { status: 401 });
     }
 
-    // 2. Parse PayMongo's signature header (Format: t=timestamp,te=test_sig,li=live_sig)
+    // Parse PayMongo's signature header
     const elements = signatureHeader.split(',');
     const timestampMap = elements[0].split('=');
-    const signatureMap = elements.find(el => el.startsWith(process.env.NODE_ENV === 'production' ? 'li=' : 'te=')).split('=');
     
+    // FIX: Dynamically find either the test (te=) or live (li=) signature 
+    const signatureElement = elements.find(el => el.startsWith('te=') || el.startsWith('li='));
+    
+    if (!signatureElement) {
+       return NextResponse.json({ error: 'Invalid signature format' }, { status: 401 });
+    }
+
+    const signatureMap = signatureElement.split('=');
     const timestamp = timestampMap[1];
     const paymongoSignature = signatureMap[1];
 
-    // 3. Generate our own hash using the timestamp, raw body, and your Secret Key
+    // Generate our hash
     const signatureString = `${timestamp}.${rawBody}`;
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
       .update(signatureString)
       .digest('hex');
 
-    // 4. Compare the hashes. If they don't match, this is a fake request.
+    // Compare hashes
     if (expectedSignature !== paymongoSignature) {
       console.error("ALERT: Invalid Webhook Signature Detected");
       return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 });
     }
 
-    // --- SECURE ZONE: If we reach here, the payment is 100% verified ---
-    
+    // --- SECURE ZONE ---
     const payload = JSON.parse(rawBody);
     
     if (payload.data.attributes.type === 'checkout_session.payment.paid') {
