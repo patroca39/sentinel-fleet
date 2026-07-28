@@ -59,8 +59,9 @@ export async function POST(request) {
               }
             ],
             payment_method_types: ['gcash', 'paymaya', 'card', 'qrph'],
-            success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment=success`,
-            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment=cancelled`,
+            // Where to send the user after they pay (or if they back out)
+            success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/?payment=success`,
+            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/?payment=cancelled`,
             description: dynamicDescription,
             metadata: {
               operatorId: operatorId, 
