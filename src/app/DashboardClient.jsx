@@ -35,7 +35,7 @@ export default function DashboardClient({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [isProcessingAuth, setIsProcessingAuth] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false); // Task 5: UI Success State Tracker
+  const [isRegistered, setIsRegistered] = useState(false); 
   const [authForm, setAuthForm] = useState({
     email: '', password: '', companyName: '', contactPerson: ''
   });
@@ -66,20 +66,30 @@ export default function DashboardClient({
 
   // --- ONBOARDING ROUTING LOGIC ---
   useEffect(() => {
-    // If the operator is logged in and still labeled as a Free Trial
     if (session && subscriptionTier === 'FREE_TRIAL') {
       const intendedPlan = localStorage.getItem('intended_plan');
       
-      // If they originally clicked "Deploy Fleet" on the pricing page
       if (intendedPlan === 'pro') {
-        // Automatically open the payment gateway modal
         setShowUpgradeModal(true);
-        // Wipe the memory immediately so it doesn't pop up again on their next login
         localStorage.removeItem('intended_plan');
       }
     }
   }, [session, subscriptionTier]);
   
+  // --- LOCKOUT ENFORCEMENT LOGIC ---
+  const isTrialExpired = useMemo(() => {
+    if (!session || subscriptionTier !== 'FREE_TRIAL') return false;
+    
+    // Grab the exact millisecond they signed up
+    const signupDate = new Date(session.user.created_at).getTime();
+    const now = new Date().getTime();
+    
+    // 30 days expressed in milliseconds
+    const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+    
+    return (now - signupDate) > thirtyDaysInMs;
+  }, [session, subscriptionTier]);
+
   // --- DATA MAPPING LOGIC ---
   const processedFleet = useMemo(() => {
     const safeDrivers = Array.isArray(drivers) ? drivers : [];
@@ -178,13 +188,11 @@ export default function DashboardClient({
           password: authForm.password,
           options: {
             data: { company_name: authForm.companyName, contact_person: authForm.contactPerson },
-            // Task 4: Dynamic redirect route directly to login
             emailRedirectTo: `${window.location.origin}/login`
           }
         });
         if (error) throw error;
         
-        // Task 5: Trigger the UI update for success instead of reloading
         setIsRegistered(true);
       }
     } catch (error) {
@@ -288,10 +296,52 @@ export default function DashboardClient({
             authForm={authForm}
             setAuthForm={setAuthForm}
             handleAuthSubmit={handleAuthSubmit}
-            isRegistered={isRegistered} // Passed down to trigger the success UI block
+            isRegistered={isRegistered}
           />
         )}
       </>
+    );
+  }
+
+  // --- EXPIRED TRIAL RENDER ---
+  if (isTrialExpired) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-300 relative overflow-hidden">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-6 z-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <div className="w-16 h-16 bg-red-900/30 border border-red-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-400 font-bold text-2xl">!</span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-100">Evaluation Concluded</h2>
+          <p className="text-sm text-slate-400">
+            Your 30-day operational trial has expired. To restore access to your fleet registry, maintenance ledgers, and fraud alerts, please upgrade to the Pro Tier.
+          </p>
+          
+          <div className="pt-4 space-y-3">
+            <button 
+              onClick={() => setShowUpgradeModal(true)}
+              className="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-3.5 rounded-lg transition-all"
+            >
+              Activate Premium Access
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="w-full bg-transparent border border-slate-700 hover:bg-slate-800 text-slate-300 font-medium py-3 rounded-lg transition-all"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+
+        {/* Render the Upgrade Modal here so the button works */}
+        {showUpgradeModal && (
+          <UpgradeModal 
+            session={session}
+            setShowUpgradeModal={setShowUpgradeModal}
+            setSubscriptionTier={setSubscriptionTier}
+            showToast={showToast}
+          />
+        )}
+      </div>
     );
   }
 
