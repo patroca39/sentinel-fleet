@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import LiveActivityFeed from '@/components/dashboard/LiveActivityFeed';
@@ -63,6 +63,22 @@ export default function DashboardClient({
   const [newDriver, setNewDriver] = useState({ driverName: '', telegramId: '', vehicleId: '' });
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [revokeModal, setRevokeModal] = useState({ open: false, driver: null, reason: 'Resigned (Voluntary)' });
+
+  // --- ONBOARDING ROUTING LOGIC ---
+  useEffect(() => {
+    // If the operator is logged in and still labeled as a Free Trial
+    if (session && subscriptionTier === 'FREE_TRIAL') {
+      const intendedPlan = localStorage.getItem('intended_plan');
+      
+      // If they originally clicked "Deploy Fleet" on the pricing page
+      if (intendedPlan === 'pro') {
+        // Automatically open the payment gateway modal
+        setShowUpgradeModal(true);
+        // Wipe the memory immediately so it doesn't pop up again on their next login
+        localStorage.removeItem('intended_plan');
+      }
+    }
+  }, [session, subscriptionTier]);
   
   // --- DATA MAPPING LOGIC ---
   const processedFleet = useMemo(() => {
