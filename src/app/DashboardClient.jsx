@@ -35,6 +35,7 @@ export default function DashboardClient({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [isProcessingAuth, setIsProcessingAuth] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false); // Task 5: UI Success State Tracker
   const [authForm, setAuthForm] = useState({
     email: '', password: '', companyName: '', contactPerson: ''
   });
@@ -154,17 +155,22 @@ export default function DashboardClient({
           password: authForm.password,
         });
         if (error) throw error;
+        window.location.reload(); 
       } else {
         const { error } = await supabase.auth.signUp({
           email: authForm.email,
           password: authForm.password,
           options: {
-            data: { company_name: authForm.companyName, contact_person: authForm.contactPerson }
+            data: { company_name: authForm.companyName, contact_person: authForm.contactPerson },
+            // Task 4: Dynamic redirect route directly to login
+            emailRedirectTo: `${window.location.origin}/login`
           }
         });
         if (error) throw error;
+        
+        // Task 5: Trigger the UI update for success instead of reloading
+        setIsRegistered(true);
       }
-      window.location.reload(); 
     } catch (error) {
       console.error("Auth Error:", error.message);
       alert(`Authentication Failed: ${error.message}`);
@@ -266,6 +272,7 @@ export default function DashboardClient({
             authForm={authForm}
             setAuthForm={setAuthForm}
             handleAuthSubmit={handleAuthSubmit}
+            isRegistered={isRegistered} // Passed down to trigger the success UI block
           />
         )}
       </>
