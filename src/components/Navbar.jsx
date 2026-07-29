@@ -23,9 +23,26 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-4">
-          {/* Replaced old onClick modal trigger with direct routing */}
+        {/* Navigation & Action Buttons */}
+        <div className="flex items-center gap-2 sm:gap-6">
+          
+          {/* Public Pages */}
+          <div className="hidden md:flex items-center gap-6 mr-2">
+            <Link 
+              href="/tutorial" 
+              className="text-sm font-medium text-slate-400 hover:text-cyan-400 transition-colors"
+            >
+              System Manual
+            </Link>
+            <Link 
+              href="/about" 
+              className="text-sm font-medium text-slate-400 hover:text-cyan-400 transition-colors"
+            >
+              About Us
+            </Link>
+          </div>
+
+          {/* Login Button */}
           <Link 
             href="/login"
             className="text-xs sm:text-sm font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-colors px-4 py-2 rounded-lg hover:bg-slate-800/50"
