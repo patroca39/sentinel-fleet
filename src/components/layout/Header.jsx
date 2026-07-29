@@ -34,8 +34,9 @@ export default function Header({
       </div>
       
       <div className="flex items-center gap-4">
-        <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded shadow-sm hidden sm:inline-block ${subscriptionTier === 'PRO_FLEET' ? 'bg-cyan-950/50 text-cyan-400 border border-cyan-900/50' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
-          {subscriptionTier === 'PRO_FLEET' ? 'Pro Tier' : 'Free Trial'}
+        {/* FIX: Checking exactly for 'PRO' as it appears in your Supabase Database */}
+        <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded shadow-sm hidden sm:inline-block ${subscriptionTier === 'PRO' ? 'bg-cyan-950/50 text-cyan-400 border border-cyan-900/50' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
+          {subscriptionTier === 'PRO' ? 'Pro Tier' : 'Free Trial'}
         </span>
         
         <div className="flex items-center gap-3 bg-emerald-950/30 border border-emerald-900/30 px-3 py-1.5 rounded-full">
