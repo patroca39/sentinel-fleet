@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request) {
   try {
-    // 1. Receive the 'userId' sent by our new Gatekeeper component
-    const { userId } = await request.json();
+    // Receive the 'userId' and the new 'isExpansion' flag
+    const { userId, isExpansion } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -15,7 +15,6 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 2. Fetch operator details securely for the PayMongo billing receipt
     const { data: profile } = await supabase
       .from('operator_profiles')
       .select('email, company_name')
@@ -25,7 +24,6 @@ export async function POST(request) {
     const email = profile?.email || 'operator@fleet.com';
     const fleetName = profile?.company_name || 'Command Tier Operator';
 
-    // 3. Securely count vehicles using your 'vehicle_specs' table architecture
     const { count, error: countError } = await supabase
       .from('vehicle_specs') 
       .select('*', { count: 'exact', head: true })
@@ -33,9 +31,13 @@ export async function POST(request) {
 
     if (countError) throw countError;
 
-    const secureVehicleCount = count || 0;
+    let secureVehicleCount = count || 0;
 
-    // 4. Dynamic Pricing Math Logic
+    // DYNAMIC EXPANSION MATH: If expanding, charge for current DB count + 1 new vehicle
+    if (isExpansion) {
+      secureVehicleCount += 1;
+    }
+
     const basePrice = 99900; // ₱999.00 in centavos
     const baseVehicleLimit = 4;
     const additionalVehiclePrice = 25000; // ₱250.00 in centavos
@@ -50,7 +52,6 @@ export async function POST(request) {
       dynamicDescription = `Premium Fleet Access (${secureVehicleCount} Vehicles Total)`;
     }
 
-    // Bulletproof Redirect URLs for Local, Staging, and Production
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
       || (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 'http://localhost:3000');
 
@@ -64,10 +65,7 @@ export async function POST(request) {
       body: JSON.stringify({
         data: {
           attributes: {
-            billing: {
-              email: email,
-              name: fleetName
-            },
+            billing: { email: email, name: fleetName },
             send_email_receipt: true,
             show_description: true,
             show_line_items: true,
@@ -94,16 +92,13 @@ export async function POST(request) {
       })
     };
 
-    // Use the stable v1 endpoint for PayMongo Checkout Sessions
     const response = await fetch('https://api.paymongo.com/v1/checkout_sessions', options);
     const data = await response.json();
 
     if (data.errors) {
-      console.error("PayMongo Error:", data.errors);
       return NextResponse.json({ error: data.errors[0]?.detail || "Payment gateway error" }, { status: 400 });
     }
 
-    // 5. IMPORTANT: Return exactly as '{ url }' so Gatekeeper.jsx routes correctly
     return NextResponse.json({ url: data.data.attributes.checkout_url }, { status: 200 });
 
   } catch (error) {

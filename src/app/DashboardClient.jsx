@@ -16,7 +16,7 @@ import RevokeDriverModal from '@/components/modals/RevokeDriverModal';
 import ReceiptScannerModal from '@/components/modals/ReceiptScannerModal';
 import RepairDetailsModal from '@/components/modals/RepairDetailsModal';
 import LandingPage from '@/components/landing/LandingPage';
-import Gatekeeper from '@/components/auth/Gatekeeper'; // NEW: Import Gatekeeper
+import Gatekeeper from '@/components/auth/Gatekeeper'; 
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -69,58 +69,28 @@ export default function DashboardClient({
     }
   }, [session, subscriptionTier]);
 
-  // --- SECURE PAYMENT REDIRECT & VERIFICATION LOGIC ---
+  // --- FLEET EXPANSION RECOVERY (TASK 4 LOGIC) ---
+  // If the user returns from PayMongo after expanding their fleet, this securely injects the 5th+ vehicle into the DB
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment');
-
-    if (paymentStatus === 'success') {
-      showToast("Verifying payment status with server...", "info");
-
-      let attempts = 0;
-      const maxAttempts = 5;
-
-      const verifyPayment = async () => {
-        const supabase = createClient();
-        const { data: profile } = await supabase
-          .from('operator_profiles')
-          .select('subscription_tier, tier')
-          .eq('id', session?.user?.id)
-          .single();
-
-        // Update local state if backend marks them as Pro
-        if (profile?.subscription_tier === 'PRO' || profile?.tier === 'pro') {
-          setSubscriptionTier('PRO');
-          showToast("Payment verified! Premium access unlocked.", "success");
-          window.history.replaceState(null, '', window.location.pathname);
-          return true;
-        }
-        return false;
-      };
-
-      const pollInterval = setInterval(async () => {
-        attempts += 1;
-        const verified = await verifyPayment();
-
-        if (verified || attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          if (!verified) {
-            showToast("Payment processing in background. Refresh in a moment if status hasn't updated.", "info");
-            window.history.replaceState(null, '', window.location.pathname);
-          }
-        }
-      }, 2000);
-
-      if (session?.user?.id) {
-         verifyPayment();
+    const checkPendingExpansion = async () => {
+      const pendingStr = localStorage.getItem('pending_expansion_vehicle');
+      // Ensure we only process this if they are authenticated and actually secured PRO access
+      if (pendingStr && subscriptionTier === 'PRO') {
+         try {
+            const newVehicle = JSON.parse(pendingStr);
+            localStorage.removeItem('pending_expansion_vehicle');
+            
+            // Add a slight 500ms delay to allow the DOM to fully render before triggering the DB write
+            setTimeout(() => {
+              handleAddVehicle(newVehicle);
+            }, 500);
+         } catch(e) {
+            console.error("Failed to parse pending vehicle expansion.");
+         }
       }
-    } else if (paymentStatus === 'cancelled') {
-      showToast("Payment checkout was cancelled.", "info");
-      window.history.replaceState(null, '', window.location.pathname);
-    }
-  }, [session]);
+    };
+    checkPendingExpansion();
+  }, [subscriptionTier]); 
   
   // --- DATA MAPPING LOGIC ---
   const processedFleet = useMemo(() => {
@@ -210,17 +180,57 @@ export default function DashboardClient({
     } finally {
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = '/login'; // Redirect to decoupled login page
+      window.location.href = '/login'; 
     }
   };
 
   const handleAddVehicle = async (newVehicle) => {
-    setVehicles(prev => [...(Array.isArray(prev) ? prev : []), { id: Date.now(), ...newVehicle }]);
-    showToast("Vehicle registered successfully", "success");
+    try {
+      const supabase = createClient();
+      
+      // 1. Write the new vehicle to the database, explicitly linking it to the operator
+      const { data, error } = await supabase
+        .from('vehicle_specs')
+        .insert({
+          operator_id: session.user.id,
+          ...newVehicle
+        })
+        .select()
+        .single(); // Request the newly created row back
+
+      if (error) throw error;
+
+      // 2. Update the frontend UI with the ACTUAL database record (which contains the real UUID)
+      setVehicles(prev => [data, ...(Array.isArray(prev) ? prev : [])]);
+      showToast("Vehicle registered successfully", "success");
+
+    } catch (error) {
+      console.error("Add Vehicle Error:", error);
+      showToast(`Failed to register vehicle: ${error.message}`, "error");
+    }
   };
 
   const handleDeleteVehicle = async (id) => {
-    setVehicles(prev => (Array.isArray(prev) ? prev : []).filter(v => v.id !== id));
+    try {
+      const supabase = createClient();
+      
+      // 1. Delete the vehicle from the database securely
+      const { error } = await supabase
+        .from('vehicle_specs')
+        .delete()
+        .eq('id', id)
+        .eq('operator_id', session.user.id); // Security check to prevent deleting other operators' vehicles
+
+      if (error) throw error;
+
+      // 2. Remove it from the frontend UI
+      setVehicles(prev => (Array.isArray(prev) ? prev : []).filter(v => v.id !== id));
+      showToast("Vehicle removed from fleet", "success");
+
+    } catch (error) {
+      console.error("Delete Vehicle Error:", error);
+      showToast(`Failed to delete vehicle: ${error.message}`, "error");
+    }
   };
 
   const handleAuthorizeDriver = async (e) => {
@@ -275,7 +285,6 @@ export default function DashboardClient({
   };
 
   // --- UNAUTHENTICATED RENDER ---
-  // Replaced AuthModal logic with clean fallback to the decoupled Landing Page
   if (!session) {
     return <LandingPage />;
   }

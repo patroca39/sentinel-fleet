@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { X, Zap, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Zap, CheckCircle2, Loader2, ShieldPlus } from 'lucide-react';
 
 export default function UpgradeModal({
   session,
@@ -10,6 +10,12 @@ export default function UpgradeModal({
   showToast
 }) {
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
+
+  useEffect(() => {
+    // Check if the user was intercepted while adding a new vehicle
+    setIsExpanding(!!localStorage.getItem('pending_expansion_vehicle'));
+  }, []);
 
   const handleUpgradeClick = async () => {
     setIsProcessingCheckout(true);
@@ -18,16 +24,15 @@ export default function UpgradeModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: session?.user?.email,
-          fleetName: session?.user?.user_metadata?.company_name || 'Sentinel Fleet Operator',
-          operatorId: session?.user?.id
+          userId: session?.user?.id,
+          isExpansion: isExpanding // Tell the API to add ₱250 to the final bill
         })
       });
 
       const data = await response.json();
 
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl; 
+      if (data.url) {
+        window.location.href = data.url; 
       } else {
         showToast(data.error || "Failed to initiate checkout", "error");
         setIsProcessingCheckout(false);
@@ -39,57 +44,45 @@ export default function UpgradeModal({
     }
   };
 
+  const handleCancel = () => {
+    // If they back out, cancel the pending vehicle insertion
+    localStorage.removeItem('pending_expansion_vehicle');
+    setShowUpgradeModal(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative animate-in zoom-in-95 duration-200">
         <button 
-          onClick={() => setShowUpgradeModal(false)}
+          onClick={handleCancel}
           className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
         
         <div className="p-8 pb-6 border-b border-slate-800 text-center">
-          <div className="w-16 h-16 bg-cyan-900/30 border border-cyan-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Zap className="w-8 h-8 text-cyan-400" />
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${isExpanding ? 'bg-amber-900/30 border border-amber-800' : 'bg-cyan-900/30 border border-cyan-800'}`}>
+            {isExpanding ? <ShieldPlus className="w-8 h-8 text-amber-400" /> : <Zap className="w-8 h-8 text-cyan-400" />}
           </div>
-          <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Premium Fleet Access</h2>
-          <p className="text-sm text-slate-400 mt-2">Unlock full operational capacity and remove trial limits.</p>
+          <h2 className="text-2xl font-bold text-white tracking-tight">
+             {isExpanding ? 'Fleet Expansion Required' : 'Premium Fleet Access'}
+          </h2>
+          <p className="text-sm text-slate-400 mt-2">
+             {isExpanding ? 'You are adding a vehicle beyond your current limit. Authorize billing to deploy.' : 'Unlock full operational capacity and remove trial limits.'}
+          </p>
         </div>
 
         <div className="p-8 space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-              <span className="text-slate-300 text-sm">Support for up to 4 vehicles</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-              <span className="text-slate-300 text-sm">Seamless scaling (₱250/mo per extra vehicle)</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-              <span className="text-slate-300 text-sm">Real-time Fraud Detection</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-              <span className="text-slate-300 text-sm">Automated Maintenance Ledger</span>
-            </div>
-          </div>
-
-          <div className="pt-4">
+          <div className="pt-2">
             <button 
               onClick={handleUpgradeClick}
               disabled={isProcessingCheckout}
-              className="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-3.5 rounded-lg transition-all flex justify-center items-center gap-2 shadow-lg shadow-cyan-900/20"
+              className={`w-full font-bold py-3.5 rounded-lg transition-all flex justify-center items-center gap-2 shadow-lg ${isExpanding ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-900/20' : 'bg-cyan-600 hover:bg-cyan-500 text-slate-950 shadow-cyan-900/20'}`}
             >
               {isProcessingCheckout ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Initializing Gateway...
-                </>
+                <><Loader2 className="w-5 h-5 animate-spin" /> Initializing Gateway...</>
               ) : (
-                'Activate Premium Subscription'
+                isExpanding ? 'Authorize Expansion (+₱250/mo)' : 'Activate Premium Subscription'
               )}
             </button>
           </div>

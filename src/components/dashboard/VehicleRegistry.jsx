@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Trash2, Plus, Activity, Settings2, ShieldAlert } from 'lucide-react';
+import { Trash2, Plus, Activity, Settings2 } from 'lucide-react';
 
 export default function VehicleRegistry({ 
   vehicles = [], 
@@ -11,7 +11,6 @@ export default function VehicleRegistry({
   showToast, 
   setShowUpgradeModal 
 }) {
-  // ULTRA-STRICT SAFETY FALLBACK
   const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
   const currentCount = safeVehicles.length;
 
@@ -21,9 +20,6 @@ export default function VehicleRegistry({
     fuel_type: 'Diesel', efficiency_limit: '', current_odo: ''
   });
 
-  const fleetLimit = subscriptionTier === 'PRO' ? 999 : 4;
-  const isAtCapacity = currentCount >= fleetLimit;
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.model_name || !formData.plate_number || !formData.efficiency_limit || !formData.current_odo) {
@@ -31,11 +27,22 @@ export default function VehicleRegistry({
       return;
     }
 
-    handleAddVehicle({
+    const vehiclePayload = {
       ...formData,
       efficiency_limit: parseFloat(formData.efficiency_limit),
       current_odo: parseInt(formData.current_odo, 10)
-    });
+    };
+
+    // TASK 4 PAYWALL ENFORCER: Intercept if 4 or more vehicles
+    if (currentCount >= 4) {
+      localStorage.setItem('pending_expansion_vehicle', JSON.stringify(vehiclePayload));
+      setShowUpgradeModal(true);
+      setIsAdding(false);
+      setFormData({ model_name: '', plate_number: '', vehicle_type: 'SUV / MPV', fuel_type: 'Diesel', efficiency_limit: '', current_odo: '' });
+      return;
+    }
+
+    handleAddVehicle(vehiclePayload);
     
     setFormData({
       model_name: '', plate_number: '', vehicle_type: 'SUV / MPV', fuel_type: 'Diesel', efficiency_limit: '', current_odo: ''
@@ -48,14 +55,13 @@ export default function VehicleRegistry({
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-xl font-bold text-white">Fleet Registry</h2>
-          <p className="text-sm text-slate-400">{currentCount} Active Assets {subscriptionTier !== 'PRO' && `(Limit: ${fleetLimit})`}</p>
+          <p className="text-sm text-slate-400">{currentCount} Active Assets</p>
         </div>
         <button 
-          onClick={() => isAtCapacity ? setShowUpgradeModal(true) : setIsAdding(!isAdding)}
+          onClick={() => setIsAdding(!isAdding)}
           className="bg-slate-100 hover:bg-white text-slate-900 font-bold py-2 px-4 rounded flex items-center gap-2 text-sm transition-colors"
         >
-          {isAtCapacity ? <ShieldAlert className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {isAtCapacity ? 'Expand Fleet Cap' : 'Register Vehicle'}
+          <Plus className="w-4 h-4" /> Register Vehicle
         </button>
       </div>
 

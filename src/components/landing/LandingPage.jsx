@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Activity, Shield, ShieldAlert, ShieldCheck, ArrowRight, MessageSquare, BrainCircuit, LineChart, CheckCircle2, Loader2, Scan, Menu, X } from 'lucide-react';
+import { Activity, Shield, ShieldAlert, ShieldCheck, ArrowRight, MessageSquare, BrainCircuit, LineChart, CheckCircle2, Loader2, Scan } from 'lucide-react';
 import Navbar from '../Navbar';
 
-export default function LandingPage({ setAuthMode, setShowLoginModal }) {
+export default function LandingPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [phase, setPhase] = useState('start'); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -165,8 +165,8 @@ export default function LandingPage({ setAuthMode, setShowLoginModal }) {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden flex flex-col">
       
-      {/* Navbar - We keep the props here if your Navbar still relies on them for mobile menus, but the actual logic will be replaced in Navbar.jsx */}
-      <Navbar setAuthMode={setAuthMode} setShowLoginModal={setShowLoginModal} />
+      {/* Cleaned up Navbar integration */}
+      <Navbar />
 
       {/* Main Content Area */}
       <div className="flex-1">
@@ -178,7 +178,6 @@ export default function LandingPage({ setAuthMode, setShowLoginModal }) {
               <Shield className="w-3.5 h-3.5" /> Stop Commercial Fuel Theft
             </div>
             
-            {/* New Copy Applied */}
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white tracking-tight leading-tight">
               Command Your Fleet. <br className="hidden sm:block"/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
@@ -190,7 +189,6 @@ export default function LandingPage({ setAuthMode, setShowLoginModal }) {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 sm:pt-6 w-full sm:w-auto px-4 sm:px-0">
-              {/* Routing mapped to /register?tier=pilot */}
               <Link 
                 href="/register?tier=pilot"
                 className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-3.5 sm:py-4 rounded-lg uppercase tracking-widest text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-900/20"
@@ -263,7 +261,7 @@ export default function LandingPage({ setAuthMode, setShowLoginModal }) {
           </div>
         </section>
 
-        {/* Pricing Module - Completely Overhauled */}
+        {/* Pricing Module */}
         <section className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12 sm:mb-16">

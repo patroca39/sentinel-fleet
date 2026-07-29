@@ -33,6 +33,13 @@ export async function POST(request) {
       .createHmac('sha256', webhookSecret)
       .update(signatureString)
       .digest('hex');
+      
+    const { error } = await supabase
+          .from('operator_profiles') 
+          .update({ 
+            tier: 'pro' // FIXED: Target the unified 'tier' column
+          })
+          .eq('id', operatorId);
 
     // Compare hashes
     if (expectedSignature !== paymongoSignature) {

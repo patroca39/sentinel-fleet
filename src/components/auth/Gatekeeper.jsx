@@ -14,22 +14,67 @@ export default function Gatekeeper({ children, user }) {
   const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
+    let pollInterval;
+
     async function fetchProfile() {
       if (!user) return;
-      // Fetch operator profile based on authenticated user ID
       const { data, error } = await supabase
         .from('operator_profiles')
         .select('tier, trial_ends_at')
         .eq('id', user.id)
         .single();
         
-      if (!error && data) {
+      if (!error && data && isMounted) {
         setProfile(data);
       }
       setLoading(false);
     }
-    
-    fetchProfile();
+
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get('payment');
+
+      if (paymentStatus === 'success') {
+        let attempts = 0;
+        // Hold the loading screen while we verify with the backend
+        setLoading(true); 
+
+        const verifyPayment = async () => {
+          attempts++;
+          const { data } = await supabase
+            .from('operator_profiles')
+            .select('tier, trial_ends_at')
+            .eq('id', user.id)
+            .single();
+
+          if (data?.tier === 'pro') {
+            if (isMounted) setProfile(data);
+            clearInterval(pollInterval);
+            window.history.replaceState(null, '', window.location.pathname);
+            setLoading(false);
+          } else if (attempts >= 10) {
+            // Timeout after 20 seconds to prevent infinite loops
+            clearInterval(pollInterval);
+            window.history.replaceState(null, '', window.location.pathname);
+            setLoading(false); 
+          }
+        };
+
+        verifyPayment(); // Check immediately
+        pollInterval = setInterval(verifyPayment, 2000); // Then poll every 2s
+      } else if (paymentStatus === 'cancelled') {
+        window.history.replaceState(null, '', window.location.pathname);
+        fetchProfile();
+      } else {
+        fetchProfile();
+      }
+    }
+
+    return () => {
+      isMounted = false;
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [user, supabase]);
 
   const handleCheckout = async () => {
