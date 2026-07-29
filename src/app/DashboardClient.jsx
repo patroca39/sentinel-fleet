@@ -69,6 +69,26 @@ export default function DashboardClient({
     }
   }, [session, subscriptionTier]);
   
+  // --- FLEET EXPANSION RECOVERY ---
+  useEffect(() => {
+    const checkPendingExpansion = async () => {
+      const pendingStr = localStorage.getItem('pending_expansion_vehicle');
+      if (pendingStr && subscriptionTier === 'PRO') {
+         try {
+            const newVehicle = JSON.parse(pendingStr);
+            localStorage.removeItem('pending_expansion_vehicle');
+            
+            setTimeout(() => {
+              handleAddVehicle(newVehicle);
+            }, 500);
+         } catch(e) {
+            console.error("Failed to parse pending vehicle expansion.");
+         }
+      }
+    };
+    checkPendingExpansion();
+  }, [subscriptionTier]); 
+
   // --- DATA MAPPING LOGIC ---
   const processedFleet = useMemo(() => {
     const safeDrivers = Array.isArray(drivers) ? drivers : [];
@@ -165,7 +185,6 @@ export default function DashboardClient({
     try {
       const supabase = createClient();
       
-      // Write the new vehicle to the database, explicitly linking it to the operator
       const { data, error } = await supabase
         .from('vehicle_specs')
         .insert({
@@ -173,7 +192,7 @@ export default function DashboardClient({
           ...newVehicle
         })
         .select()
-        .single();
+        .single(); 
 
       if (error) throw error;
 
@@ -215,7 +234,7 @@ export default function DashboardClient({
     try {
       const supabase = createClient();
       
-      // 1. Insert into Supabase 'drivers' table
+      // 1. Insert into Supabase (Standard select, no risky relational joins)
       const { data, error } = await supabase
         .from('drivers')
         .insert({
@@ -224,13 +243,20 @@ export default function DashboardClient({
           telegram_id: newDriver.telegramId,
           assigned_vehicle_id: newDriver.vehicleId || null
         })
-        .select('*, vehicle_specs(*)') // Fetch linked vehicle relation
+        .select() 
         .single();
 
       if (error) throw error;
 
-      // 2. Update UI state with real database record
-      setDrivers(prev => [...(Array.isArray(prev) ? prev : []), data]);
+      // 2. Manually attach the vehicle data from our existing state to prevent the "Unknown" UI bug
+      const assignedVehicle = vehicles.find(v => String(v.id) === String(data.assigned_vehicle_id));
+      const completeDriverData = {
+        ...data,
+        vehicle_specs: assignedVehicle || null
+      };
+
+      // 3. Update UI state with real database record
+      setDrivers(prev => [...(Array.isArray(prev) ? prev : []), completeDriverData]);
       setNewDriver({ driverName: '', telegramId: '', vehicleId: '' });
       showToast("Driver registered successfully", "success");
 
@@ -253,13 +279,20 @@ export default function DashboardClient({
         .update({ assigned_vehicle_id: valToUpdate })
         .eq('id', driverId)
         .eq('operator_id', session.user.id)
-        .select('*, vehicle_specs(*)')
+        .select()
         .single();
 
       if (error) throw error;
 
-      // 2. Update UI state
-      setDrivers(prev => (Array.isArray(prev) ? prev : []).map(d => d.id === driverId ? data : d));
+      // 2. Manually attach the new vehicle data
+      const assignedVehicle = vehicles.find(v => String(v.id) === String(data.assigned_vehicle_id));
+      const completeDriverData = {
+        ...data,
+        vehicle_specs: assignedVehicle || null
+      };
+
+      // 3. Update UI state
+      setDrivers(prev => (Array.isArray(prev) ? prev : []).map(d => d.id === driverId ? completeDriverData : d));
       showToast("Vehicle reassigned successfully", "success");
 
     } catch (error) {
@@ -315,6 +348,10 @@ export default function DashboardClient({
 
   const showToast = (message, type = 'info') => {
     console.log(`[Toast: ${type}]`, message); 
+    // Fallback to visual alert so you don't get silent failures
+    if (type === 'error' || type === 'success') {
+       alert(message);
+    }
   };
 
   // --- UNAUTHENTICATED RENDER ---
