@@ -3,27 +3,42 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request) {
   try {
-    const { email, fleetName, operatorId } = await request.json();
+    // 1. Receive the 'userId' sent by our new Gatekeeper component
+    const { userId } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // MERGE FIX 1: Use 'vehicle_specs' to match your actual database architecture
+    // 2. Fetch operator details securely for the PayMongo billing receipt
+    const { data: profile } = await supabase
+      .from('operator_profiles')
+      .select('email, company_name')
+      .eq('id', userId)
+      .single();
+
+    const email = profile?.email || 'operator@fleet.com';
+    const fleetName = profile?.company_name || 'Command Tier Operator';
+
+    // 3. Securely count vehicles using your 'vehicle_specs' table architecture
     const { count, error: countError } = await supabase
       .from('vehicle_specs') 
       .select('*', { count: 'exact', head: true })
-      .eq('operator_id', operatorId); 
+      .eq('operator_id', userId); 
 
     if (countError) throw countError;
 
     const secureVehicleCount = count || 0;
 
-    // YOUR EXCELLENT MATH LOGIC
-    const basePrice = 99900; // ₱999.00
+    // 4. Dynamic Pricing Math Logic
+    const basePrice = 99900; // ₱999.00 in centavos
     const baseVehicleLimit = 4;
-    const additionalVehiclePrice = 25000; // ₱250.00 per extra vehicle
+    const additionalVehiclePrice = 25000; // ₱250.00 in centavos
 
     let totalAmount = basePrice;
     let dynamicDescription = `Premium Fleet Access (Up to 4 Vehicles)`;
@@ -35,7 +50,7 @@ export async function POST(request) {
       dynamicDescription = `Premium Fleet Access (${secureVehicleCount} Vehicles Total)`;
     }
 
-    // MERGE FIX 2: Bulletproof Redirect URLs for Local, Staging, and Production
+    // Bulletproof Redirect URLs for Local, Staging, and Production
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
       || (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 'http://localhost:3000');
 
@@ -49,7 +64,6 @@ export async function POST(request) {
       body: JSON.stringify({
         data: {
           attributes: {
-            // MERGE FIX 3: Keep billing object to auto-fill the customer's email at checkout
             billing: {
               email: email,
               name: fleetName
@@ -66,13 +80,12 @@ export async function POST(request) {
                 description: dynamicDescription
               }
             ],
-            // Includes your QRPH addition
             payment_method_types: ['gcash', 'paymaya', 'card', 'qrph'],
             success_url: `${baseUrl}/?payment=success`,
             cancel_url: `${baseUrl}/?payment=cancelled`,
             description: 'Monthly Subscription',
             metadata: {
-              operatorId: operatorId, 
+              operatorId: userId, 
               email: email,
               vehicleCount: secureVehicleCount.toString() 
             }
@@ -81,7 +94,7 @@ export async function POST(request) {
       })
     };
 
-    // MERGE FIX 4: Use the stable v1 endpoint for PayMongo Checkout Sessions
+    // Use the stable v1 endpoint for PayMongo Checkout Sessions
     const response = await fetch('https://api.paymongo.com/v1/checkout_sessions', options);
     const data = await response.json();
 
@@ -90,7 +103,8 @@ export async function POST(request) {
       return NextResponse.json({ error: data.errors[0]?.detail || "Payment gateway error" }, { status: 400 });
     }
 
-    return NextResponse.json({ checkoutUrl: data.data.attributes.checkout_url }, { status: 200 });
+    // 5. IMPORTANT: Return exactly as '{ url }' so Gatekeeper.jsx routes correctly
+    return NextResponse.json({ url: data.data.attributes.checkout_url }, { status: 200 });
 
   } catch (error) {
     console.error("Payment Route Error:", error);

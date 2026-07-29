@@ -37,7 +37,9 @@ export default function Gatekeeper({ children, user }) {
     try {
       const response = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        // THIS IS THE CRUCIAL FIX: Sending the userId to the backend API
+        body: JSON.stringify({ userId: user.id }) 
       });
       
       const { url } = await response.json();
