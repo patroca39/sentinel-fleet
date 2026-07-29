@@ -165,7 +165,7 @@ export default function DashboardClient({
     try {
       const supabase = createClient();
       
-      // 1. Write the new vehicle to the database, explicitly linking it to the operator
+      // Write the new vehicle to the database, explicitly linking it to the operator
       const { data, error } = await supabase
         .from('vehicle_specs')
         .insert({
@@ -173,11 +173,10 @@ export default function DashboardClient({
           ...newVehicle
         })
         .select()
-        .single(); // Request the newly created row back
+        .single();
 
       if (error) throw error;
 
-      // 2. Update the frontend UI with the ACTUAL database record (which contains the real UUID)
       setVehicles(prev => [data, ...(Array.isArray(prev) ? prev : [])]);
       showToast("Vehicle registered successfully", "success");
 
@@ -191,16 +190,14 @@ export default function DashboardClient({
     try {
       const supabase = createClient();
       
-      // 1. Delete the vehicle from the database securely
       const { error } = await supabase
         .from('vehicle_specs')
         .delete()
         .eq('id', id)
-        .eq('operator_id', session.user.id); // Security check to prevent deleting other operators' vehicles
+        .eq('operator_id', session.user.id);
 
       if (error) throw error;
 
-      // 2. Remove it from the frontend UI
       setVehicles(prev => (Array.isArray(prev) ? prev : []).filter(v => v.id !== id));
       showToast("Vehicle removed from fleet", "success");
 
@@ -210,30 +207,89 @@ export default function DashboardClient({
     }
   };
 
+  // --- PERSISTENT DRIVER MANAGEMENT HANDLERS ---
   const handleAuthorizeDriver = async (e) => {
     e.preventDefault();
     setIsAuthorizing(true);
-    setTimeout(() => {
-      setDrivers(prev => [...(Array.isArray(prev) ? prev : []), { 
-        id: Date.now(), 
-        driver_name: newDriver.driverName, 
-        telegram_id: newDriver.telegramId, 
-        assigned_vehicle_id: newDriver.vehicleId 
-      }]);
+    
+    try {
+      const supabase = createClient();
+      
+      // 1. Insert into Supabase 'drivers' table
+      const { data, error } = await supabase
+        .from('drivers')
+        .insert({
+          operator_id: session.user.id,
+          driver_name: newDriver.driverName,
+          telegram_id: newDriver.telegramId,
+          assigned_vehicle_id: newDriver.vehicleId || null
+        })
+        .select('*, vehicle_specs(*)') // Fetch linked vehicle relation
+        .single();
+
+      if (error) throw error;
+
+      // 2. Update UI state with real database record
+      setDrivers(prev => [...(Array.isArray(prev) ? prev : []), data]);
       setNewDriver({ driverName: '', telegramId: '', vehicleId: '' });
-      setIsAuthorizing(false);
       showToast("Driver registered successfully", "success");
-    }, 500);
+
+    } catch (error) {
+      console.error("Add Driver Error:", error);
+      showToast(`Failed to register driver: ${error.message}`, "error");
+    } finally {
+      setIsAuthorizing(false);
+    }
   };
 
-  const handleReassignNode = (driverId, newVehicleId) => {
-    setDrivers(prev => (Array.isArray(prev) ? prev : []).map(d => d.id === driverId ? { ...d, assigned_vehicle_id: newVehicleId } : d));
+  const handleReassignNode = async (driverId, newVehicleId) => {
+    try {
+      const supabase = createClient();
+      const valToUpdate = newVehicleId === "" ? null : newVehicleId;
+
+      // 1. Update assignment in Supabase
+      const { data, error } = await supabase
+        .from('drivers')
+        .update({ assigned_vehicle_id: valToUpdate })
+        .eq('id', driverId)
+        .eq('operator_id', session.user.id)
+        .select('*, vehicle_specs(*)')
+        .single();
+
+      if (error) throw error;
+
+      // 2. Update UI state
+      setDrivers(prev => (Array.isArray(prev) ? prev : []).map(d => d.id === driverId ? data : d));
+      showToast("Vehicle reassigned successfully", "success");
+
+    } catch (error) {
+      console.error("Reassign Error:", error);
+      showToast(`Failed to reassign vehicle: ${error.message}`, "error");
+    }
   };
 
-  const executeRevoke = () => {
-    setDrivers(prev => (Array.isArray(prev) ? prev : []).filter(d => d.id !== revokeModal.driver.id));
-    setRevokeModal({ open: false, driver: null, reason: 'Resigned (Voluntary)' });
-    showToast("Driver released", "success");
+  const executeRevoke = async () => {
+    try {
+      const supabase = createClient();
+      
+      // 1. Delete driver record from Supabase
+      const { error } = await supabase
+        .from('drivers')
+        .delete()
+        .eq('id', revokeModal.driver.id)
+        .eq('operator_id', session.user.id);
+
+      if (error) throw error;
+
+      // 2. Update UI state
+      setDrivers(prev => (Array.isArray(prev) ? prev : []).filter(d => d.id !== revokeModal.driver.id));
+      setRevokeModal({ open: false, driver: null, reason: 'Resigned (Voluntary)' });
+      showToast("Driver released", "success");
+
+    } catch (error) {
+      console.error("Revoke Driver Error:", error);
+      showToast(`Failed to release driver: ${error.message}`, "error");
+    }
   };
 
   const handleResolveAnomaly = async (driverId) => {
