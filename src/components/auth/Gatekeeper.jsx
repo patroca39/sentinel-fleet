@@ -5,7 +5,8 @@ import { Loader2, Lock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
-export default function Gatekeeper({ children, user }) {
+// FIX: Accept setSubscriptionTier as a prop
+export default function Gatekeeper({ children, user, setSubscriptionTier }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -20,7 +21,6 @@ export default function Gatekeeper({ children, user }) {
     async function fetchProfile() {
       if (!user) return;
       
-      // FIX: Selecting the exact columns that exist in your database
       const { data, error } = await supabase
         .from('operator_profiles')
         .select('subscription_tier, created_at')
@@ -29,6 +29,8 @@ export default function Gatekeeper({ children, user }) {
         
       if (!error && data && isMounted) {
         setProfile(data);
+        // FIX: Sync the dashboard UI immediately on load
+        if (setSubscriptionTier) setSubscriptionTier(data.subscription_tier); 
       }
       setLoading(false);
     }
@@ -50,7 +52,11 @@ export default function Gatekeeper({ children, user }) {
             .single();
 
           if (data?.subscription_tier === 'PRO') {
-            if (isMounted) setProfile(data);
+            if (isMounted) {
+              setProfile(data);
+              // FIX: Sync the dashboard UI immediately upon successful polling
+              if (setSubscriptionTier) setSubscriptionTier('PRO');
+            }
             clearInterval(pollInterval);
             window.history.replaceState(null, '', window.location.pathname);
             setLoading(false);
@@ -75,7 +81,7 @@ export default function Gatekeeper({ children, user }) {
       isMounted = false;
       if (pollInterval) clearInterval(pollInterval);
     };
-  }, [user, supabase]);
+  }, [user, supabase, setSubscriptionTier]);
 
   const handleCheckout = async () => {
     setCheckoutLoading(true);
@@ -113,11 +119,9 @@ export default function Gatekeeper({ children, user }) {
     );
   }
 
-  // Determine State utilizing your actual database values
   const isPro = profile?.subscription_tier === 'PRO';
   const isPending = profile?.subscription_tier === 'PRO_PENDING';
   
-  // Dynamically calculate 30 days from account creation
   const trialEnds = profile?.created_at 
     ? new Date(new Date(profile.created_at).getTime() + 30 * 24 * 60 * 60 * 1000) 
     : new Date(0);

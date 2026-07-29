@@ -268,7 +268,7 @@ export default function DashboardClient({
 
   // --- AUTHENTICATED DASHBOARD RENDER (WRAPPED IN GATEKEEPER) ---
   return (
-    <Gatekeeper user={session.user}>
+    <Gatekeeper user={session.user} setSubscriptionTier={setSubscriptionTier}>
       <div className="min-h-screen bg-slate-950 flex font-sans overflow-hidden text-slate-300 relative">
         <Sidebar 
           activeTab={activeTab} 
