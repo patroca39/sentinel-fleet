@@ -23,10 +23,12 @@ function RegisterForm() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    
+    // ANTI-SPAM GUARD: If already processing, exit immediately to prevent multiple emails
+    if (loading) return; 
+    
     setLoading(true);
     setError(null);
-
-    const trialEndsAt = isPro ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -35,8 +37,7 @@ function RegisterForm() {
         data: {
           company_name: companyName,
           contact_person: contactPerson,
-          tier: isPro ? 'pro_pending' : 'free',
-          trial_ends_at: trialEndsAt,
+          subscription_tier: isPro ? 'PRO_PENDING' : 'FREE_TRIAL', // Matches your DB schema
         }
       }
     });
@@ -47,7 +48,6 @@ function RegisterForm() {
       return;
     }
 
-    // Handle Supabase "Fake Success" for existing emails
     if (data?.user && data.user.identities && data.user.identities.length === 0) {
       if (isPro) {
         setError("Account already exists. To process your Pro upgrade, please log in to the Command Center and click 'Upgrade to Pro Now'.");

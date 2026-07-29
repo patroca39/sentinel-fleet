@@ -33,11 +33,11 @@ export async function POST(request) {
       .createHmac('sha256', webhookSecret)
       .update(signatureString)
       .digest('hex');
-      
+
     const { error } = await supabase
           .from('operator_profiles') 
           .update({ 
-            tier: 'pro' // FIXED: Target the unified 'tier' column
+            subscription_tier: 'PRO' // Targets the correct column shown in your database
           })
           .eq('id', operatorId);
 

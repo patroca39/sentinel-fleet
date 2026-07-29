@@ -68,29 +68,6 @@ export default function DashboardClient({
       }
     }
   }, [session, subscriptionTier]);
-
-  // --- FLEET EXPANSION RECOVERY (TASK 4 LOGIC) ---
-  // If the user returns from PayMongo after expanding their fleet, this securely injects the 5th+ vehicle into the DB
-  useEffect(() => {
-    const checkPendingExpansion = async () => {
-      const pendingStr = localStorage.getItem('pending_expansion_vehicle');
-      // Ensure we only process this if they are authenticated and actually secured PRO access
-      if (pendingStr && subscriptionTier === 'PRO') {
-         try {
-            const newVehicle = JSON.parse(pendingStr);
-            localStorage.removeItem('pending_expansion_vehicle');
-            
-            // Add a slight 500ms delay to allow the DOM to fully render before triggering the DB write
-            setTimeout(() => {
-              handleAddVehicle(newVehicle);
-            }, 500);
-         } catch(e) {
-            console.error("Failed to parse pending vehicle expansion.");
-         }
-      }
-    };
-    checkPendingExpansion();
-  }, [subscriptionTier]); 
   
   // --- DATA MAPPING LOGIC ---
   const processedFleet = useMemo(() => {

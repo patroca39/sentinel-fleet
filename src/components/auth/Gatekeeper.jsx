@@ -19,9 +19,11 @@ export default function Gatekeeper({ children, user }) {
 
     async function fetchProfile() {
       if (!user) return;
+      
+      // FIX: Selecting the exact columns that exist in your database
       const { data, error } = await supabase
         .from('operator_profiles')
-        .select('tier, trial_ends_at')
+        .select('subscription_tier, created_at')
         .eq('id', user.id)
         .single();
         
@@ -37,32 +39,30 @@ export default function Gatekeeper({ children, user }) {
 
       if (paymentStatus === 'success') {
         let attempts = 0;
-        // Hold the loading screen while we verify with the backend
         setLoading(true); 
 
         const verifyPayment = async () => {
           attempts++;
           const { data } = await supabase
             .from('operator_profiles')
-            .select('tier, trial_ends_at')
+            .select('subscription_tier, created_at')
             .eq('id', user.id)
             .single();
 
-          if (data?.tier === 'pro') {
+          if (data?.subscription_tier === 'PRO') {
             if (isMounted) setProfile(data);
             clearInterval(pollInterval);
             window.history.replaceState(null, '', window.location.pathname);
             setLoading(false);
           } else if (attempts >= 10) {
-            // Timeout after 20 seconds to prevent infinite loops
             clearInterval(pollInterval);
             window.history.replaceState(null, '', window.location.pathname);
             setLoading(false); 
           }
         };
 
-        verifyPayment(); // Check immediately
-        pollInterval = setInterval(verifyPayment, 2000); // Then poll every 2s
+        verifyPayment();
+        pollInterval = setInterval(verifyPayment, 2000);
       } else if (paymentStatus === 'cancelled') {
         window.history.replaceState(null, '', window.location.pathname);
         fetchProfile();
@@ -83,13 +83,12 @@ export default function Gatekeeper({ children, user }) {
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // THIS IS THE CRUCIAL FIX: Sending the userId to the backend API
         body: JSON.stringify({ userId: user.id }) 
       });
       
       const { url } = await response.json();
       if (url) {
-        window.location.href = url; // Redirect directly to PayMongo
+        window.location.href = url;
       } else {
         throw new Error("Failed to generate checkout link");
       }
@@ -114,20 +113,24 @@ export default function Gatekeeper({ children, user }) {
     );
   }
 
-  // Determine State with safety checks for older accounts
-  const isPro = profile?.tier === 'pro';
-  const isPending = profile?.tier === 'pro_pending';
+  // Determine State utilizing your actual database values
+  const isPro = profile?.subscription_tier === 'PRO';
+  const isPending = profile?.subscription_tier === 'PRO_PENDING';
   
-  // Safe math: If no trial date exists, default to 0 to prevent NaN
-  const trialEnds = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : new Date(0);
-  const daysLeft = profile?.trial_ends_at ? Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 3600 * 24)) : 0;
+  // Dynamically calculate 30 days from account creation
+  const trialEnds = profile?.created_at 
+    ? new Date(new Date(profile.created_at).getTime() + 30 * 24 * 60 * 60 * 1000) 
+    : new Date(0);
+    
+  const daysLeft = profile?.created_at 
+    ? Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 3600 * 24)) 
+    : 0;
+    
   const isExpired = !isPro && !isPending && (daysLeft <= 0);
 
-  // If Pro, or Free trial is still active -> Grant Access
   if (isPro || (!isExpired && !isPending)) {
     return (
       <div className="relative min-h-screen flex flex-col">
-        {/* Unobtrusive trial banner with Early Upgrade Option */}
         {!isPro && (
            <div className="bg-slate-900 border-b border-slate-800 text-slate-400 text-xs py-2 px-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 font-mono z-50 relative">
               <div className="flex items-center gap-2">
@@ -150,11 +153,8 @@ export default function Gatekeeper({ children, user }) {
     );
   }
 
-  // If Expired or Pending Pro -> Render the Lock Wall
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-4 relative selection:bg-cyan-500/30">
-      
-      {/* Background aesthetics */}
       <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
          <Lock className="w-96 h-96" />
       </div>
