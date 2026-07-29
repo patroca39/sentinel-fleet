@@ -15,9 +15,10 @@ import MaintenanceLedgerModal from '@/components/modals/MaintenanceLedgerModal';
 import RevokeDriverModal from '@/components/modals/RevokeDriverModal';
 import ReceiptScannerModal from '@/components/modals/ReceiptScannerModal';
 import RepairDetailsModal from '@/components/modals/RepairDetailsModal';
-import AuthModal from '@/components/auth/AuthModal';
 import LandingPage from '@/components/landing/LandingPage';
+import Gatekeeper from '@/components/auth/Gatekeeper'; // NEW: Import Gatekeeper
 import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardClient({ 
   initialSession = null, 
@@ -30,15 +31,7 @@ export default function DashboardClient({
   initialSubscriptionTier = 'FREE_TRIAL' 
 }) {
   const [session, setSession] = useState(initialSession);
-  
-  // --- AUTHENTICATION STATES ---
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
-  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false); 
-  const [authForm, setAuthForm] = useState({
-    email: '', password: '', companyName: '', contactPerson: ''
-  });
+  const router = useRouter();
 
   // --- DASHBOARD STATES ---
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -93,11 +86,12 @@ export default function DashboardClient({
         const supabase = createClient();
         const { data: profile } = await supabase
           .from('operator_profiles')
-          .select('subscription_tier')
+          .select('subscription_tier, tier')
           .eq('id', session?.user?.id)
           .single();
 
-        if (profile?.subscription_tier === 'PRO') {
+        // Update local state if backend marks them as Pro
+        if (profile?.subscription_tier === 'PRO' || profile?.tier === 'pro') {
           setSubscriptionTier('PRO');
           showToast("Payment verified! Premium access unlocked.", "success");
           window.history.replaceState(null, '', window.location.pathname);
@@ -119,7 +113,6 @@ export default function DashboardClient({
         }
       }, 2000);
 
-      // Initial check immediately
       if (session?.user?.id) {
          verifyPayment();
       }
@@ -129,20 +122,6 @@ export default function DashboardClient({
     }
   }, [session]);
   
-  // --- LOCKOUT ENFORCEMENT LOGIC ---
-  const isTrialExpired = useMemo(() => {
-    if (!session || subscriptionTier !== 'FREE_TRIAL') return false;
-    
-    // Grab the exact millisecond they signed up
-    const signupDate = new Date(session.user.created_at).getTime();
-    const now = new Date().getTime();
-    
-    // 30 days expressed in milliseconds
-    const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-    
-    return (now - signupDate) > thirtyDaysInMs;
-  }, [session, subscriptionTier]);
-
   // --- DATA MAPPING LOGIC ---
   const processedFleet = useMemo(() => {
     const safeDrivers = Array.isArray(drivers) ? drivers : [];
@@ -222,40 +201,6 @@ export default function DashboardClient({
   }, [processedFleet]);
 
   // --- HANDLERS ---
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    setIsProcessingAuth(true);
-    const supabase = createClient();
-    
-    try {
-      if (authMode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: authForm.email,
-          password: authForm.password,
-        });
-        if (error) throw error;
-        window.location.reload(); 
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email: authForm.email,
-          password: authForm.password,
-          options: {
-            data: { company_name: authForm.companyName, contact_person: authForm.contactPerson },
-            emailRedirectTo: `${window.location.origin}/login`
-          }
-        });
-        if (error) throw error;
-        
-        setIsRegistered(true);
-      }
-    } catch (error) {
-      console.error("Auth Error:", error.message);
-      alert(`Authentication Failed: ${error.message}`);
-    } finally {
-      setIsProcessingAuth(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
       const supabase = createClient();
@@ -265,10 +210,7 @@ export default function DashboardClient({
     } finally {
       localStorage.clear();
       sessionStorage.clear();
-      document.cookie.split(";").forEach((c) => {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-      window.location.href = '/';
+      window.location.href = '/login'; // Redirect to decoupled login page
     }
   };
 
@@ -333,59 +275,94 @@ export default function DashboardClient({
   };
 
   // --- UNAUTHENTICATED RENDER ---
+  // Replaced AuthModal logic with clean fallback to the decoupled Landing Page
   if (!session) {
-    return (
-      <>
-        <LandingPage 
-          setAuthMode={setAuthMode} 
-          setShowLoginModal={setShowLoginModal} 
-        />
-        {showLoginModal && (
-          <AuthModal 
-            authMode={authMode}
-            setAuthMode={setAuthMode}
-            setShowLoginModal={setShowLoginModal}
-            isProcessingAuth={isProcessingAuth}
-            authForm={authForm}
-            setAuthForm={setAuthForm}
-            handleAuthSubmit={handleAuthSubmit}
-            isRegistered={isRegistered}
-          />
-        )}
-      </>
-    );
+    return <LandingPage />;
   }
 
-  // --- EXPIRED TRIAL RENDER ---
-  if (isTrialExpired) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-300 relative overflow-hidden">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-6 z-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <div className="w-16 h-16 bg-red-900/30 border border-red-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-400 font-bold text-2xl">!</span>
-          </div>
-          <h2 className="text-2xl font-bold text-slate-100">Evaluation Concluded</h2>
-          <p className="text-sm text-slate-400">
-            Your 30-day operational trial has expired. To restore access to your fleet registry, maintenance ledgers, and fraud alerts, please upgrade to the Pro Tier.
-          </p>
+  // --- AUTHENTICATED DASHBOARD RENDER (WRAPPED IN GATEKEEPER) ---
+  return (
+    <Gatekeeper user={session.user}>
+      <div className="min-h-screen bg-slate-950 flex font-sans overflow-hidden text-slate-300 relative">
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          isMobileMenuOpen={isMobileMenuOpen} 
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          handleLogout={handleLogout}
+        />
+        
+        <div className="flex-1 flex flex-col h-screen overflow-hidden">
+          <Header 
+            activeTab={activeTab} 
+            setIsMobileMenuOpen={setIsMobileMenuOpen} 
+            subscriptionTier={subscriptionTier} 
+          />
           
-          <div className="pt-4 space-y-3">
-            <button 
-              onClick={() => setShowUpgradeModal(true)}
-              className="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-3.5 rounded-lg transition-all"
-            >
-              Activate Premium Access
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="w-full bg-transparent border border-slate-700 hover:bg-slate-800 text-slate-300 font-medium py-3 rounded-lg transition-all"
-            >
-              Sign Out
-            </button>
-          </div>
+          <main className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
+            <div className="max-w-7xl mx-auto space-y-8">
+              
+              {activeTab === 'dashboard' && (
+                <LiveActivityFeed 
+                  isLoadingData={false}
+                  activeFleet={vehicles}
+                  fraudAlerts={fraudAlerts}       
+                  pmsAlerts={pmsAlerts}           
+                  processedFleet={processedFleet} 
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  setSelectedDriver={setSelectedDriver} 
+                  setPmsModal={() => {}}
+                />
+              )}
+
+              {activeTab === 'assets' && (
+                <VehicleRegistry 
+                  vehicles={vehicles}
+                  subscriptionTier={subscriptionTier}
+                  handleAddVehicle={handleAddVehicle}
+                  handleDeleteVehicle={handleDeleteVehicle}
+                  showToast={showToast}
+                  setShowUpgradeModal={setShowUpgradeModal}
+                />
+              )}
+              
+              {activeTab === 'fuel' && (
+                <FuelMarketRates 
+                  fuelLogs={fuelLogs}
+                  vehicles={vehicles}
+                  marketRates={initialMarketRates || []}
+                  uniqueVaultDrivers={(Array.isArray(drivers) ? drivers : []).map(d => ({ id: d.telegram_id, name: d.driver_name }))}
+                  filteredFuelLogs={fuelLogs}
+                />
+              )}
+
+              {activeTab === 'onboarding' && (
+                <DriverRoster 
+                  newDriver={newDriver}
+                  setNewDriver={setNewDriver}
+                  handleAuthorizeDriver={handleAuthorizeDriver}
+                  isAuthorizing={isAuthorizing}
+                  vehicles={vehicles}
+                  drivers={drivers}
+                  handleReassignNode={handleReassignNode}
+                  setRevokeModal={setRevokeModal}
+                />
+              )}
+
+              {activeTab === 'maintenance' && (
+                <RepairLedger 
+                  maintenanceHistory={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
+                  isLoadingData={false}
+                  setSelectedLog={setSelectedRepairLog} 
+                />
+              )}
+
+            </div>
+          </main>
         </div>
 
-        {/* Render the Upgrade Modal here so the button works */}
+        {/* Modals */}
         {showUpgradeModal && (
           <UpgradeModal 
             session={session}
@@ -394,142 +371,49 @@ export default function DashboardClient({
             showToast={showToast}
           />
         )}
+
+        {selectedDriver && (
+          <VehicleProfileModal 
+            driver={selectedDriver}
+            fuelLogs={fuelLogs}
+            maintenanceHistory={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
+            fraudAlerts={fraudAlerts}
+            onClose={() => setSelectedDriver(null)}
+            onOpenMaintenanceLedger={(driver) => setDrillDownLedger(driver)}
+            onResolveAnomaly={handleResolveAnomaly}
+          />
+        )}
+
+        {drillDownLedger && (
+          <MaintenanceLedgerModal
+            driver={drillDownLedger}
+            maintenanceLogs={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
+            onClose={() => setDrillDownLedger(null)}
+          />
+        )}
+
+        {selectedReceipt && (
+          <ReceiptScannerModal 
+            log={selectedReceipt}
+            onClose={() => setSelectedReceipt(null)}
+          />
+        )}
+
+        {selectedRepairLog && (
+          <RepairDetailsModal 
+            log={selectedRepairLog}
+            onClose={() => setSelectedRepairLog(null)}
+          />
+        )}
+
+        {revokeModal.open && (
+          <RevokeDriverModal
+            revokeModal={revokeModal}
+            setRevokeModal={setRevokeModal}
+            executeRevoke={executeRevoke}
+          />
+        )}
       </div>
-    );
-  }
-
-  // --- AUTHENTICATED DASHBOARD RENDER ---
-  return (
-    <div className="min-h-screen bg-slate-950 flex font-sans overflow-hidden text-slate-300 relative">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        isMobileMenuOpen={isMobileMenuOpen} 
-        setIsMobileMenuOpen={setIsMobileMenuOpen}
-        handleLogout={handleLogout}
-      />
-      
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Header 
-          activeTab={activeTab} 
-          setIsMobileMenuOpen={setIsMobileMenuOpen} 
-          subscriptionTier={subscriptionTier} 
-        />
-        
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
-          <div className="max-w-7xl mx-auto space-y-8">
-            
-            {activeTab === 'dashboard' && (
-              <LiveActivityFeed 
-                isLoadingData={false}
-                activeFleet={vehicles}
-                fraudAlerts={fraudAlerts}       
-                pmsAlerts={pmsAlerts}           
-                processedFleet={processedFleet} 
-                viewMode={viewMode}
-                setViewMode={setViewMode}
-                setSelectedDriver={setSelectedDriver} 
-                setPmsModal={() => {}}
-              />
-            )}
-
-            {activeTab === 'assets' && (
-              <VehicleRegistry 
-                vehicles={vehicles}
-                subscriptionTier={subscriptionTier}
-                handleAddVehicle={handleAddVehicle}
-                handleDeleteVehicle={handleDeleteVehicle}
-                showToast={showToast}
-                setShowUpgradeModal={setShowUpgradeModal}
-              />
-            )}
-            
-            {activeTab === 'fuel' && (
-              <FuelMarketRates 
-                fuelLogs={fuelLogs}
-                vehicles={vehicles}
-                marketRates={initialMarketRates || []}
-                uniqueVaultDrivers={(Array.isArray(drivers) ? drivers : []).map(d => ({ id: d.telegram_id, name: d.driver_name }))}
-                filteredFuelLogs={fuelLogs}
-              />
-            )}
-
-            {activeTab === 'onboarding' && (
-              <DriverRoster 
-                newDriver={newDriver}
-                setNewDriver={setNewDriver}
-                handleAuthorizeDriver={handleAuthorizeDriver}
-                isAuthorizing={isAuthorizing}
-                vehicles={vehicles}
-                drivers={drivers}
-                handleReassignNode={handleReassignNode}
-                setRevokeModal={setRevokeModal}
-              />
-            )}
-
-            {activeTab === 'maintenance' && (
-              <RepairLedger 
-                maintenanceHistory={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
-                isLoadingData={false}
-                setSelectedLog={setSelectedRepairLog} 
-              />
-            )}
-
-          </div>
-        </main>
-      </div>
-
-      {/* Modals */}
-      {showUpgradeModal && (
-        <UpgradeModal 
-          session={session}
-          setShowUpgradeModal={setShowUpgradeModal}
-          setSubscriptionTier={setSubscriptionTier}
-          showToast={showToast}
-        />
-      )}
-
-      {selectedDriver && (
-        <VehicleProfileModal 
-          driver={selectedDriver}
-          fuelLogs={fuelLogs}
-          maintenanceHistory={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
-          fraudAlerts={fraudAlerts}
-          onClose={() => setSelectedDriver(null)}
-          onOpenMaintenanceLedger={(driver) => setDrillDownLedger(driver)}
-          onResolveAnomaly={handleResolveAnomaly}
-        />
-      )}
-
-      {drillDownLedger && (
-        <MaintenanceLedgerModal
-          driver={drillDownLedger}
-          maintenanceLogs={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
-          onClose={() => setDrillDownLedger(null)}
-        />
-      )}
-
-      {selectedReceipt && (
-        <ReceiptScannerModal 
-          log={selectedReceipt}
-          onClose={() => setSelectedReceipt(null)}
-        />
-      )}
-
-      {selectedRepairLog && (
-        <RepairDetailsModal 
-          log={selectedRepairLog}
-          onClose={() => setSelectedRepairLog(null)}
-        />
-      )}
-
-      {revokeModal.open && (
-        <RevokeDriverModal
-          revokeModal={revokeModal}
-          setRevokeModal={setRevokeModal}
-          executeRevoke={executeRevoke}
-        />
-      )}
-    </div>
+    </Gatekeeper>
   );
 }

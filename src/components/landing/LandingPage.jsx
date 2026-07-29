@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Activity, Shield, ShieldAlert, ShieldCheck, ArrowRight, MessageSquare, BrainCircuit, LineChart, CheckCircle2, Loader2, Scan, Menu, X } from 'lucide-react';
 import Navbar from '../Navbar';
+
 export default function LandingPage({ setAuthMode, setShowLoginModal }) {
   const [activeStep, setActiveStep] = useState(0);
   const [phase, setPhase] = useState('start'); 
@@ -114,11 +115,11 @@ export default function LandingPage({ setAuthMode, setShowLoginModal }) {
                 {phase === 'resolve' ? <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" /> : <LineChart className={`w-5 h-5 sm:w-6 sm:h-6 text-emerald-500 ${phase === 'process' ? 'animate-bounce' : 'opacity-50'}`} />}
              </div>
              <div className="flex items-end gap-1 h-10 sm:h-12">
-               {[40, 70, 45, 90, 65, 85, 100].map((h, i) => (
-                 <div key={i} className="flex-1 bg-emerald-500/20 rounded-t" style={{ height: `${h}%` }}>
-                   <div className="bg-emerald-400 w-full rounded-t transition-all duration-1000 ease-out" style={{ height: phase !== 'start' ? '100%' : '0%' }}></div>
-                 </div>
-               ))}
+                {[40, 70, 45, 90, 65, 85, 100].map((h, i) => (
+                  <div key={i} className="flex-1 bg-emerald-500/20 rounded-t" style={{ height: `${h}%` }}>
+                    <div className="bg-emerald-400 w-full rounded-t transition-all duration-1000 ease-out" style={{ height: phase !== 'start' ? '100%' : '0%' }}></div>
+                  </div>
+                ))}
              </div>
           </div>
         </div>
@@ -164,33 +165,38 @@ export default function LandingPage({ setAuthMode, setShowLoginModal }) {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden flex flex-col">
       
-      {/* Navbar */}
+      {/* Navbar - We keep the props here if your Navbar still relies on them for mobile menus, but the actual logic will be replaced in Navbar.jsx */}
       <Navbar setAuthMode={setAuthMode} setShowLoginModal={setShowLoginModal} />
 
       {/* Main Content Area */}
       <div className="flex-1">
+        
         {/* Hero Section */}
         <section className="pt-32 sm:pt-40 pb-16 sm:pb-20 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-950/50 border border-cyan-900/50 text-cyan-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-2 sm:mb-4">
               <Shield className="w-3.5 h-3.5" /> Stop Commercial Fuel Theft
             </div>
+            
+            {/* New Copy Applied */}
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white tracking-tight leading-tight">
-              Protect your margins. <br className="hidden sm:block"/>
+              Command Your Fleet. <br className="hidden sm:block"/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                Automate your fleet.
+                Control Your Margins.
               </span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed px-2">
-              Sentinel Fleet is an AI-powered dispatch and auditing system. Track efficiency, manage repairs, and intercept fuel fraud in real-time.
+              Deploy enterprise-grade TNVS telematics with zero friction. Scale your infrastructure only when your fleet grows.
             </p>
+            
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 sm:pt-6 w-full sm:w-auto px-4 sm:px-0">
-              <button 
-                onClick={() => { setAuthMode('register'); setShowLoginModal(true); }}
+              {/* Routing mapped to /register?tier=pilot */}
+              <Link 
+                href="/register?tier=pilot"
                 className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-3.5 sm:py-4 rounded-lg uppercase tracking-widest text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-900/20"
               >
-                Start Free Trial <ArrowRight className="w-4 h-4" />
-              </button>
+                Initiate 30-Day Pilot <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </section>
@@ -257,52 +263,78 @@ export default function LandingPage({ setAuthMode, setShowLoginModal }) {
           </div>
         </section>
 
-        {/* Pricing Module */}
+        {/* Pricing Module - Completely Overhauled */}
         <section className="py-16 sm:py-24 px-4 sm:px-6">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12 sm:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-3 sm:mb-4">Transparent Pricing</h2>
-              <p className="text-sm sm:text-base text-slate-400">Start for free. Scale when you're ready.</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-4 tracking-tight text-white">
+                Choose Your Deployment
+              </h2>
+              <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+                Start for free. Scale when you're ready.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-              <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-2xl">
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Evaluation Tier</h3>
-                <div className="text-2xl sm:text-3xl font-black text-cyan-400 mb-6">Free</div>
-                <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-8 text-xs sm:text-sm text-slate-300">
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-slate-600 flex-shrink-0" /> Complete system access</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-slate-600 flex-shrink-0" /> Single vehicle support</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-slate-600 flex-shrink-0" /> Telegram bot integration</li>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              
+              {/* Tactical Pilot Card (Free Tier) */}
+              <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-8 shadow-lg flex flex-col">
+                <h3 className="text-2xl font-semibold mb-2 text-white">Tactical Pilot</h3>
+                <p className="text-sm text-slate-400 mb-6">30-Day Evaluation</p>
+                <div className="text-5xl font-bold text-white mb-8">₱0</div>
+                
+                <ul className="space-y-4 mb-8 text-sm text-slate-300 flex-grow">
+                  <li className="flex items-center">
+                    <span className="text-cyan-400 mr-3">✓</span> Full Command Center Access
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-cyan-400 mr-3">✓</span> Single-Vehicle Telemetry Validation
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-cyan-400 mr-3">✓</span> Automated Telegram Dispatch Alerts
+                  </li>
                 </ul>
-                <button 
-                  onClick={() => { setAuthMode('register'); setShowLoginModal(true); }}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-lg text-xs sm:text-sm transition-colors"
+                
+                <Link 
+                  href="/register?tier=pilot"
+                  className="w-full bg-[#1e293b] hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-xl transition-all text-center border border-slate-700 hover:border-slate-500 block"
                 >
-                  Start Trial
-                </button>
+                  Initiate 30-Day Pilot
+                </Link>
               </div>
 
-              <div className="bg-gradient-to-b from-cyan-950 to-slate-900 border border-cyan-800 p-6 sm:p-8 rounded-2xl relative shadow-[0_0_30px_rgba(6,182,212,0.1)]">
-                <div className="absolute top-0 right-0 bg-cyan-600 text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-2 sm:px-3 py-1 rounded-bl-lg rounded-tr-xl">
-                  Commercial
+              {/* Command Tier Card (Pro Tier) */}
+              <div className="bg-[#0f172a] border border-cyan-500 rounded-2xl p-8 relative shadow-[0_0_30px_rgba(6,182,212,0.15)] flex flex-col">
+                <div className="absolute top-0 right-0 bg-cyan-500 text-xs font-bold px-4 py-1.5 rounded-bl-xl rounded-tr-xl text-black tracking-wider">
+                  COMMERCIAL
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Pro Tier</h3>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <div className="text-2xl sm:text-3xl font-black text-cyan-400">₱999</div>
-                  <div className="text-slate-500 font-mono text-xs sm:text-sm">/ mo</div>
+                <h3 className="text-2xl font-semibold mb-2 text-white">Command Tier</h3>
+                <p className="text-sm text-slate-400 mb-6">Enterprise Infrastructure</p>
+                <div className="text-5xl font-bold text-cyan-400 mb-2">
+                  ₱999 <span className="text-lg font-normal text-slate-500">/ mo</span>
                 </div>
-                <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-8 text-xs sm:text-sm text-slate-300">
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-cyan-400 flex-shrink-0" /> Support for up to 4 vehicles</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-cyan-400 flex-shrink-0" /> ₱250/mo per additional vehicle</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-4 h-4 text-cyan-400 flex-shrink-0" /> AI Anomaly & Fraud Detection</li>
+                <p className="text-xs text-slate-500 mb-6">Base fleet included. Scale seamlessly.</p>
+                
+                <ul className="space-y-4 mb-8 text-sm text-slate-300 flex-grow">
+                  <li className="flex items-center">
+                    <span className="text-cyan-400 mr-3">✓</span> Core Infrastructure (Up to 4 Vehicles)
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-cyan-400 mr-3">✓</span> Frictionless Scaling (+₱250/mo per extra unit)
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-cyan-400 mr-3">✓</span> AI-Powered Fraud & Anomaly Shield
+                  </li>
                 </ul>
-                <button 
-                  onClick={() => { setAuthMode('register'); setShowLoginModal(true); }}
-                  className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg text-xs sm:text-sm transition-colors"
+                
+                <Link 
+                  href="/register?tier=pro"
+                  className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-3 px-4 rounded-xl transition-all text-center shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] block"
                 >
-                  Deploy Fleet
-                </button>
+                  Deploy Pro Fleet
+                </Link>
               </div>
+              
             </div>
           </div>
         </section>

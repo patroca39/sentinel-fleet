@@ -1,0 +1,143 @@
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import { Loader2, Lock, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+
+export default function Gatekeeper({ children, user }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  
+  const supabase = createClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!user) return;
+      // Fetch operator profile based on authenticated user ID
+      const { data, error } = await supabase
+        .from('operator_profiles')
+        .select('tier, trial_ends_at')
+        .eq('id', user.id)
+        .single();
+        
+      if (!error && data) {
+        setProfile(data);
+      }
+      setLoading(false);
+    }
+    
+    fetchProfile();
+  }, [user, supabase]);
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url; // Redirect directly to PayMongo
+      } else {
+        throw new Error("Failed to generate checkout link");
+      }
+    } catch (error) {
+      console.error("Checkout Error:", error);
+      alert("Payment gateway is temporarily unavailable. Please try again.");
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center flex-col gap-4">
+        <Loader2 className="w-10 h-10 text-cyan-500 animate-spin" />
+        <p className="text-slate-500 text-sm font-mono tracking-widest uppercase">Authorizing Access...</p>
+      </div>
+    );
+  }
+
+  // Determine State
+  const isPro = profile?.tier === 'pro';
+  const isPending = profile?.tier === 'pro_pending';
+  const trialEnds = new Date(profile?.trial_ends_at);
+  const daysLeft = Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 3600 * 24));
+  const isExpired = !isPro && !isPending && (daysLeft <= 0);
+
+  // If Pro, or Free trial is still active -> Grant Access
+  if (isPro || (!isExpired && !isPending)) {
+    return (
+      <div className="relative min-h-screen flex flex-col">
+        {/* Unobtrusive trial banner for Free tier */}
+        {!isPro && (
+           <div className="bg-slate-900 border-b border-slate-800 text-slate-400 text-xs text-center py-2 flex items-center justify-center gap-2 font-mono">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> 
+              Tactical Pilot Active — {daysLeft} Days Remaining
+           </div>
+        )}
+        <div className="flex-1">
+           {children}
+        </div>
+      </div>
+    );
+  }
+
+  // If Expired or Pending Pro -> Render the Lock Wall
+  return (
+    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-4 relative selection:bg-cyan-500/30">
+      
+      {/* Background aesthetics */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+         <Lock className="w-96 h-96" />
+      </div>
+
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center relative z-10 shadow-2xl">
+        <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
+          <Lock className="w-8 h-8 text-rose-500" />
+        </div>
+        
+        <h2 className="text-2xl font-bold text-white mb-2">
+           {isPending ? 'Complete Deployment' : 'Pilot Concluded'}
+        </h2>
+        
+        <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+           {isPending 
+             ? 'Your commercial infrastructure is ready. Authorize payment to unlock your command center and begin scaling your fleet.'
+             : 'Your 30-day tactical pilot has ended. Upgrade to the Command Tier to maintain operational control and restore telemetry access.'}
+        </p>
+
+        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 mb-6 text-left space-y-3">
+           <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Command Tier Includes:</h4>
+           <p className="text-xs text-slate-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-500"/> Support for up to 4 vehicles</p>
+           <p className="text-xs text-slate-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-500"/> AI Anomaly & Fraud Detection</p>
+           <p className="text-xs text-slate-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-cyan-500"/> Unlimited Driver Accounts</p>
+        </div>
+
+        <button 
+          onClick={handleCheckout}
+          disabled={checkoutLoading}
+          className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] disabled:opacity-50"
+        >
+          {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Authorize ₱999 Deployment'}
+        </button>
+
+        <button 
+          onClick={handleSignOut} 
+          className="mt-6 text-xs text-slate-500 hover:text-white transition-colors"
+        >
+          Return to Login
+        </button>
+      </div>
+    </div>
+  );
+}
