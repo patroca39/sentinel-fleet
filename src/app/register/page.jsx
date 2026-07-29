@@ -27,7 +27,7 @@ function RegisterForm() {
     // Calculate trial expiration (30 days from now) if Pilot tier
     const trialEndsAt = isPro ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -38,13 +38,24 @@ function RegisterForm() {
       }
     });
 
+    // 1. Handle Explicit Errors
     if (signUpError) {
       setError(signUpError.message);
       setLoading(false);
-    } else {
-      setSuccess(true);
-      setLoading(false);
+      return;
     }
+
+    // 2. Handle Supabase "Fake Success" for existing emails
+    // If identities array is empty, the user already exists in the database.
+    if (data?.user && data.user.identities && data.user.identities.length === 0) {
+      setError("An account with this email already exists. Please proceed to the Command Center Login.");
+      setLoading(false);
+      return;
+    }
+
+    // 3. Genuine Success
+    setSuccess(true);
+    setLoading(false);
   };
 
   if (success) {
