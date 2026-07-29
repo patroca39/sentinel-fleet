@@ -67,22 +67,33 @@ export default function Gatekeeper({ children, user }) {
     );
   }
 
-  // Determine State
+  // Determine State with safety checks for older accounts
   const isPro = profile?.tier === 'pro';
   const isPending = profile?.tier === 'pro_pending';
-  const trialEnds = new Date(profile?.trial_ends_at);
-  const daysLeft = Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 3600 * 24));
+  
+  // Safe math: If no trial date exists, default to 0 to prevent NaN
+  const trialEnds = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : new Date(0);
+  const daysLeft = profile?.trial_ends_at ? Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 3600 * 24)) : 0;
   const isExpired = !isPro && !isPending && (daysLeft <= 0);
 
   // If Pro, or Free trial is still active -> Grant Access
   if (isPro || (!isExpired && !isPending)) {
     return (
       <div className="relative min-h-screen flex flex-col">
-        {/* Unobtrusive trial banner for Free tier */}
+        {/* Unobtrusive trial banner with Early Upgrade Option */}
         {!isPro && (
-           <div className="bg-slate-900 border-b border-slate-800 text-slate-400 text-xs text-center py-2 flex items-center justify-center gap-2 font-mono">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> 
-              Tactical Pilot Active — {daysLeft} Days Remaining
+           <div className="bg-slate-900 border-b border-slate-800 text-slate-400 text-xs py-2 px-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 font-mono z-50 relative">
+              <div className="flex items-center gap-2">
+                 <ShieldAlert className="w-4 h-4 text-amber-500" /> 
+                 Tactical Pilot Active — {daysLeft} Days Remaining
+              </div>
+              <button
+                 onClick={handleCheckout}
+                 disabled={checkoutLoading}
+                 className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-1.5 px-4 rounded transition-colors flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider shadow-[0_0_10px_rgba(6,182,212,0.3)] disabled:opacity-50"
+              >
+                 {checkoutLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Upgrade to Pro Now'}
+              </button>
            </div>
         )}
         <div className="flex-1">

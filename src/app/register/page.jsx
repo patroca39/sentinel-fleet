@@ -11,6 +11,8 @@ function RegisterForm() {
   const tier = searchParams.get('tier') || 'pilot';
   const isPro = tier === 'pro';
 
+  const [companyName, setCompanyName] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +26,6 @@ function RegisterForm() {
     setLoading(true);
     setError(null);
 
-    // Calculate trial expiration (30 days from now) if Pilot tier
     const trialEndsAt = isPro ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error: signUpError } = await supabase.auth.signUp({
@@ -32,28 +33,31 @@ function RegisterForm() {
       password,
       options: {
         data: {
+          company_name: companyName,
+          contact_person: contactPerson,
           tier: isPro ? 'pro_pending' : 'free',
           trial_ends_at: trialEndsAt,
         }
       }
     });
 
-    // 1. Handle Explicit Errors
     if (signUpError) {
       setError(signUpError.message);
       setLoading(false);
       return;
     }
 
-    // 2. Handle Supabase "Fake Success" for existing emails
-    // If identities array is empty, the user already exists in the database.
+    // Handle Supabase "Fake Success" for existing emails
     if (data?.user && data.user.identities && data.user.identities.length === 0) {
-      setError("An account with this email already exists. Please proceed to the Command Center Login.");
+      if (isPro) {
+        setError("Account already exists. To process your Pro upgrade, please log in to the Command Center and click 'Upgrade to Pro Now'.");
+      } else {
+        setError("An account with this email already exists. Please proceed to the Command Center Login.");
+      }
       setLoading(false);
       return;
     }
 
-    // 3. Genuine Success
     setSuccess(true);
     setLoading(false);
   };
@@ -78,7 +82,6 @@ function RegisterForm() {
 
   return (
     <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-      {/* Pro Tier UI Accent */}
       {isPro && (
         <div className="absolute top-0 right-0 bg-cyan-500 text-xs font-bold px-4 py-1 rounded-bl-lg text-black">
           PRO TIER
@@ -103,44 +106,36 @@ function RegisterForm() {
         </div>
       )}
 
-      <form onSubmit={handleRegister} className="space-y-5">
+      <form onSubmit={handleRegister} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-            Operator Email
-          </label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
-            placeholder="admin@fleet.com"
-          />
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Company Name</label>
+          <input type="text" required value={companyName} onChange={(e) => setCompanyName(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+            placeholder="e.g. RozenPasque Transportation Services" />
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-            Secure Password
-          </label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
-            placeholder="••••••••"
-          />
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Fleet Operator</label>
+          <input type="text" required value={contactPerson} onChange={(e) => setContactPerson(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+            placeholder="Owner / Manager Name" />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full font-bold py-3.5 rounded-lg transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed ${
-            isPro 
-              ? 'bg-cyan-600 hover:bg-cyan-500 text-white' 
-              : 'bg-slate-800 hover:bg-slate-700 text-white'
-          }`}
-        >
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Account Email</label>
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+            placeholder="admin@fleet.com" />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Secure Password</label>
+          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+            placeholder="••••••••" />
+        </div>
+
+        <button type="submit" disabled={loading} className={`w-full font-bold py-3.5 rounded-lg transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50 ${isPro ? 'bg-cyan-600 hover:bg-cyan-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-white'}`}>
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isPro ? 'Initialize Deployment' : 'Start 30-Day Pilot')}
         </button>
       </form>
@@ -150,12 +145,10 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-[#020617] flex flex-col justify-center items-center p-4 selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#020617] flex flex-col justify-center items-center p-4 py-12 selection:bg-cyan-500/30">
       <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium z-10">
         <ArrowLeft className="w-4 h-4" /> Back to Home
       </Link>
-      
-      {/* Suspense is strictly required by Next.js when using useSearchParams in the App Router */}
       <Suspense fallback={<div className="flex items-center gap-2 text-cyan-500"><Loader2 className="w-5 h-5 animate-spin" /> Loading terminal...</div>}>
         <RegisterForm />
       </Suspense>
