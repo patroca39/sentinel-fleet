@@ -16,7 +16,7 @@ export async function POST(request) {
     const elements = signatureHeader.split(',');
     const timestampMap = elements[0].split('=');
     
-    // FIX: Dynamically find either the test (te=) or live (li=) signature 
+    // Dynamically find either the test (te=) or live (li=) signature 
     const signatureElement = elements.find(el => el.startsWith('te=') || el.startsWith('li='));
     
     if (!signatureElement) {
@@ -34,27 +34,22 @@ export async function POST(request) {
       .update(signatureString)
       .digest('hex');
 
-    const { error } = await supabase
-          .from('operator_profiles') 
-          .update({ 
-            subscription_tier: 'PRO' // Targets the correct column shown in your database
-          })
-          .eq('id', operatorId);
-
-    // Compare hashes
+    // 1. Compare hashes FIRST for security
     if (expectedSignature !== paymongoSignature) {
       console.error("ALERT: Invalid Webhook Signature Detected");
       return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 });
     }
 
     // --- SECURE ZONE ---
+    // 2. Parse the payload ONLY after confirming the signature is valid
     const payload = JSON.parse(rawBody);
     
     if (payload.data.attributes.type === 'checkout_session.payment.paid') {
       const metadata = payload.data.attributes.data.attributes.metadata;
-      const operatorId = metadata.operatorId;
+      const operatorId = metadata?.operatorId;
 
       if (operatorId) {
+        // 3. Initialize Supabase and run the update inside this secure block
         const supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL,
           process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -74,7 +69,7 @@ export async function POST(request) {
     return NextResponse.json({ received: true }, { status: 200 });
 
   } catch (error) {
-    console.error("Webhook Error:", error);
+    console.error("Webhook Error:", error.message || error);
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 }
