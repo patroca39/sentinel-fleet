@@ -34,7 +34,16 @@ export default function VehicleRegistry({
     };
 
     // TASK 4 PAYWALL ENFORCER: Intercept if 4 or more vehicles
-    if (currentCount >= 4) {
+    // TASK 4 PAYWALL ENFORCER: Dynamic Tier Limits
+    let limitReached = false;
+    
+    if (subscriptionTier === 'FREE_TRIAL' && currentCount >= 1) {
+      limitReached = true;
+    } else if (subscriptionTier === 'PRO' && currentCount >= 4) {
+      limitReached = true;
+    }
+
+    if (limitReached) {
       localStorage.setItem('pending_expansion_vehicle', JSON.stringify(vehiclePayload));
       setShowUpgradeModal(true);
       setIsAdding(false);
