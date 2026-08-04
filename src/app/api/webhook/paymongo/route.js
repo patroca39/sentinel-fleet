@@ -12,11 +12,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing signature or secret' }, { status: 401 });
     }
 
-    // Parse PayMongo's signature header
     const elements = signatureHeader.split(',');
     const timestampMap = elements[0].split('=');
     
-    // Dynamically find either the test (te=) or live (li=) signature 
     const signatureElement = elements.find(el => el.startsWith('te=') || el.startsWith('li='));
     
     if (!signatureElement) {
@@ -27,38 +25,40 @@ export async function POST(request) {
     const timestamp = timestampMap[1];
     const paymongoSignature = signatureMap[1];
 
-    // Generate our hash
     const signatureString = `${timestamp}.${rawBody}`;
     const expectedSignature = crypto
       .createHmac('sha256', webhookSecret)
       .update(signatureString)
       .digest('hex');
 
-    // 1. Compare hashes FIRST for security
     if (expectedSignature !== paymongoSignature) {
       console.error("ALERT: Invalid Webhook Signature Detected");
       return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 });
     }
 
-    // --- SECURE ZONE ---
-    // 2. Parse the payload ONLY after confirming the signature is valid
     const payload = JSON.parse(rawBody);
     
     if (payload.data.attributes.type === 'checkout_session.payment.paid') {
       const metadata = payload.data.attributes.data.attributes.metadata;
       const operatorId = metadata?.operatorId;
+      
+      // Map the incoming count, defaulting to 4 for new PRO deployments
+      const targetVehicleCount = parseInt(metadata?.vehicleCount || '4', 10);
 
       if (operatorId) {
-        // 3. Initialize Supabase and run the update inside this secure block
         const supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL,
           process.env.SUPABASE_SERVICE_ROLE_KEY
         );
 
+        // Guarantee a minimum fleet size of 4 for PRO
+        const finalFleetSize = Math.max(4, targetVehicleCount);
+
         const { error } = await supabase
           .from('operator_profiles') 
           .update({ 
-            subscription_tier: 'PRO'
+            subscription_tier: 'PRO',
+            allowed_fleet_size: finalFleetSize
           })
           .eq('id', operatorId); 
 
