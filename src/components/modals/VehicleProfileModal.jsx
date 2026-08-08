@@ -12,7 +12,8 @@ export default function VehicleProfileModal({
   fraudAlerts = [], 
   onClose,
   onOpenMaintenanceLedger,
-  onResolveAnomaly
+  onResolveAnomaly,
+  onSelectRepairLog
 }) {
   const [isResolving, setIsResolving] = useState(false);
 
@@ -171,8 +172,12 @@ export default function VehicleProfileModal({
                </thead>
                <tbody className="divide-y divide-slate-800/50">
                  {mLogs.slice(0, 5).map(log => (
-                   <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
-                     <td className="px-6 py-4 text-slate-300">{log.service_date || (log.created_at ? new Date(log.created_at).toLocaleDateString() : 'N/A')}</td>
+                   <tr 
+                     key={log.id} 
+                     onClick={() => onSelectRepairLog && onSelectRepairLog(log)}
+                     className="hover:bg-slate-800/50 cursor-pointer transition-colors group"
+                   >
+                     <td className="px-6 py-4 text-slate-300 group-hover:text-cyan-400 transition-colors">{log.service_date || (log.created_at ? new Date(log.created_at).toLocaleDateString() : 'N/A')}</td>
                      <td className="px-6 py-4">{log.odometer_at_service?.toLocaleString() || log.odometer?.toLocaleString() || 0} km</td>
                      <td className="px-6 py-4 text-right font-bold text-emerald-400">₱{Number(log.total_cost || log.cost || 0).toLocaleString()}</td>
                    </tr>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { X, Activity, ShieldAlert, BarChart3, Camera } from 'lucide-react';
+import { X, Activity, ShieldAlert, BarChart3 } from 'lucide-react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 
@@ -118,12 +118,6 @@ export default function DriverDrillDownModal({
           <div className="bg-slate-950/50 border border-slate-800/50 rounded-xl overflow-hidden">
              <div className="p-5 border-b border-slate-800/50 flex justify-between items-center">
                <h4 className="text-sm font-bold text-slate-300">Lifetime Repairs & PMS</h4>
-               <button 
-                 onClick={() => setPmsModal({ open: true, driver: selectedDriver, latestOdo: selectedDriver.latestOdo })} 
-                 className="bg-cyan-950/30 hover:bg-cyan-900/50 text-cyan-400 border border-cyan-900/50 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-colors"
-               >
-                  <Camera className="w-3 h-3"/> Upload Receipt
-               </button>
              </div>
              <table className="w-full text-left text-sm text-slate-400 whitespace-nowrap font-mono">
                <thead className="bg-slate-900/50 text-slate-500 border-b border-slate-800/50">

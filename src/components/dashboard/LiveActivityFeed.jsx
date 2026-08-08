@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Activity, Car, ShieldAlert, CheckCircle2, AlertTriangle, LayoutGrid, List, Camera } from 'lucide-react';
+import { Activity, ShieldAlert, CheckCircle2, AlertTriangle, LayoutGrid, List } from 'lucide-react';
 
 export default function LiveActivityFeed({
   isLoadingData,
@@ -67,7 +67,6 @@ export default function LiveActivityFeed({
                              <span className="mx-2">•</span> 
                              <span className="font-bold text-rose-400">Efficiency Dropped {anomaly.efficiencyDrop?.toFixed(0)}%</span>
                              <span className="mx-2">•</span> 
-                             {/* Safe parsing for string numbers */}
                              <span className="font-bold text-rose-500">Est. Loss: ₱{Number(anomaly.estimatedLoss || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                           </div>
                           <span className="text-[10px] text-slate-500 font-mono">{anomaly.alertReason}</span>
@@ -118,13 +117,6 @@ export default function LiveActivityFeed({
                           className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold uppercase tracking-widest rounded border border-slate-700 transition-colors"
                         >
                           View Details
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); setPmsModal({ open: true, driver: driver, latestOdo: driver.latestOdo }); }} 
-                          className="px-5 py-3 bg-amber-900/50 hover:bg-amber-800/80 text-amber-200 text-xs font-bold uppercase tracking-widest rounded border border-amber-800 transition-colors flex items-center gap-2"
-                        >
-                          <Camera className="w-4 h-4" /> Save Receipt
                         </button>
                       </div>
                     </div>

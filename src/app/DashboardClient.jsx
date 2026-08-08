@@ -460,6 +460,7 @@ export default function DashboardClient({
             onClose={() => setSelectedDriver(null)}
             onOpenMaintenanceLedger={(driver) => setDrillDownLedger(driver)}
             onResolveAnomaly={handleResolveAnomaly}
+            onSelectRepairLog={setSelectedRepairLog}
           />
         )}
 
