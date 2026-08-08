@@ -41,9 +41,6 @@ export async function POST(request) {
     if (payload.data.attributes.type === 'checkout_session.payment.paid') {
       const metadata = payload.data.attributes.data.attributes.metadata;
       const operatorId = metadata?.operatorId;
-      
-      // Map the incoming count, defaulting to 4 for new PRO deployments
-      const targetVehicleCount = parseInt(metadata?.vehicleCount || '4', 10);
 
       if (operatorId) {
         const supabase = createClient(
@@ -51,16 +48,15 @@ export async function POST(request) {
           process.env.SUPABASE_SERVICE_ROLE_KEY
         );
 
-        // Guarantee a minimum fleet size of 4 for PRO
-        const finalFleetSize = Math.max(4, targetVehicleCount);
+        // <-- ADDED: Extract the expansion flag and calculate slots to add
+        const isExpansion = metadata?.isExpansion === 'true';
+        const slotsToAdd = isExpansion ? 1 : 0;
 
-        const { error } = await supabase
-          .from('operator_profiles') 
-          .update({ 
-            subscription_tier: 'PRO',
-            allowed_fleet_size: finalFleetSize
-          })
-          .eq('id', operatorId); 
+        // <-- ADDED: Execute the secure database function
+        const { error } = await supabase.rpc('authorize_fleet_expansion', { 
+          target_operator_id: operatorId, 
+          purchased_slots: slotsToAdd 
+        });
 
         if (error) throw error;
       }

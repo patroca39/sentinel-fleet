@@ -33,7 +33,6 @@ export default function VehicleRegistry({
       current_odo: parseInt(formData.current_odo, 10)
     };
 
-    // TASK 4 PAYWALL ENFORCER: Intercept if 4 or more vehicles
     // TASK 4 PAYWALL ENFORCER: Dynamic Tier Limits
     let limitReached = false;
     

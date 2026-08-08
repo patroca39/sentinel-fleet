@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request) {
   try {
-    // Receive the 'userId' and the new 'isExpansion' flag
     const { userId, isExpansion } = await request.json();
 
     if (!userId) {
@@ -85,7 +84,8 @@ export async function POST(request) {
             metadata: {
               operatorId: userId, 
               email: email,
-              vehicleCount: secureVehicleCount.toString() 
+              vehicleCount: secureVehicleCount.toString(),
+              isExpansion: isExpansion ? 'true' : 'false' // <-- ADDED: Passes flag to webhook
             }
           }
         }
