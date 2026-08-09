@@ -185,6 +185,11 @@ export default function TutorialPage() {
               Sentinel<span className="font-light">Fleet</span>
             </span>
           </div>
+          <div className="pt-2 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest">
+              <Link href="/legal/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</Link>
+              <span className="text-slate-800">|</span>
+              <Link href="/legal/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</Link>
+            </div>
           <div className="text-center text-slate-500 text-sm space-y-1.5 flex flex-col justify-center">
             <p className="text-xs uppercase tracking-widest text-slate-600 font-bold mb-1">Contact & Support</p>
             <p>Email: <a href="mailto:rozenpasque@gmail.com" className="hover:text-cyan-400 transition-colors">rozenpasque@gmail.com</a></p>

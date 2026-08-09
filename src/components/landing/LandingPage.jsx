@@ -370,6 +370,11 @@ export default function LandingPage() {
             <p>&copy; 2026 <strong className="text-slate-400">Sentinel Soft Solutions</strong></p>
             <p className="text-[10px] sm:text-xs text-slate-600 uppercase tracking-widest font-mono">Tacloban City, Philippines</p>
           </div>
+          <div className="pt-2 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest">
+              <Link href="/legal/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</Link>
+              <span className="text-slate-800">|</span>
+              <Link href="/legal/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</Link>
+            </div>
           
         </div>
       </footer>

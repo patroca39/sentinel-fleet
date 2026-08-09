@@ -90,6 +90,11 @@ export default function AboutPage() {
             <p className="text-xs uppercase tracking-widest text-slate-600 font-bold mb-1">Contact & Support</p>
             <p>Email: <a href="mailto:rozenpasque@gmail.com" className="hover:text-cyan-400 transition-colors">rozenpasque@gmail.com</a></p>
           </div>
+          <div className="pt-2 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest">
+              <Link href="/legal/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</Link>
+              <span className="text-slate-800">|</span>
+              <Link href="/legal/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</Link>
+            </div>
           <div className="text-center md:text-right text-slate-500 text-sm space-y-1.5 flex flex-col justify-center">
             <p>&copy; 2026 <strong className="text-slate-400">Sentinel Soft Solutions</strong></p>
             <p className="text-xs text-slate-600 uppercase tracking-widest font-mono">Tacloban City, Philippines</p>
