@@ -75,9 +75,11 @@ export default function AboutPage() {
 
       </div>
 
-      {/* Corporate Footer */}
+     {/* Corporate Footer */}
       <footer className="border-t border-slate-800/50 bg-slate-950 py-12 px-6 mt-auto">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6 items-center">
+          
+          {/* Column 1: Brand */}
           <div className="flex items-center justify-center md:justify-start gap-3">
             <div className="w-8 h-8 flex items-center justify-center grayscale opacity-40">
               <ShieldCheck className="w-6 h-6 text-slate-500" />
@@ -86,19 +88,24 @@ export default function AboutPage() {
               Sentinel<span className="font-light">Fleet</span>
             </span>
           </div>
+          
+          {/* Column 2: Contact & Legal */}
           <div className="text-center text-slate-500 text-sm space-y-1.5 flex flex-col justify-center">
             <p className="text-xs uppercase tracking-widest text-slate-600 font-bold mb-1">Contact & Support</p>
             <p>Email: <a href="mailto:rozenpasque@gmail.com" className="hover:text-cyan-400 transition-colors">rozenpasque@gmail.com</a></p>
-          </div>
-          <div className="pt-2 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest">
+            <div className="pt-2 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest">
               <Link href="/legal/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</Link>
               <span className="text-slate-800">|</span>
               <Link href="/legal/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</Link>
             </div>
+          </div>
+          
+          {/* Column 3: Copyright */}
           <div className="text-center md:text-right text-slate-500 text-sm space-y-1.5 flex flex-col justify-center">
             <p>&copy; 2026 <strong className="text-slate-400">Sentinel Soft Solutions</strong></p>
             <p className="text-xs text-slate-600 uppercase tracking-widest font-mono">Tacloban City, Philippines</p>
           </div>
+
         </div>
       </footer>
     </div>
