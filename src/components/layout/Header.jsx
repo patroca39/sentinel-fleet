@@ -11,6 +11,7 @@ export default function Header({
   const getTabTitle = () => {
     switch(activeTab) {
       case 'dashboard': return 'Live Fleet Activity';
+      case 'cpk': return 'Cost-Per-Kilometer (CPK) Analytics'; // <-- Add CPK Title
       case 'fuel': return 'Fuel Analytics & Pump Prices';
       case 'assets': return 'Vehicle Registry';
       case 'onboarding': return 'Driver Registry';

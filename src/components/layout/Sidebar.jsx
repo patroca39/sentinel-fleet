@@ -12,6 +12,7 @@ export default function Sidebar({
 }) {
   const navItems = [
     { id: 'dashboard', icon: Activity, label: 'Live Activity' },
+    { id: 'cpk', icon: CircleDollarSign, label: 'CPK Analytics' }, // <-- Add CPK tab here
     { id: 'fuel', icon: Fuel, label: 'Fuel Metrics' },
     { id: 'assets', icon: Car, label: 'Manage Vehicles' },
     { id: 'onboarding', icon: UserPlus, label: 'Manage Drivers' },

@@ -19,6 +19,16 @@ import LandingPage from '@/components/landing/LandingPage';
 import Gatekeeper from '@/components/auth/Gatekeeper'; 
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import CpkAnalytics from '@/components/dashboard/CpkAnalytics';
+
+// Inside DashboardClient main render area:
+{activeTab === 'cpk' && (
+  <CpkAnalytics 
+    vehicles={vehicles}
+    fuelLogs={fuelLogs}
+    maintenanceHistory={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
+  />
+)}
 
 export default function DashboardClient({ 
   initialSession = null, 
