@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Activity, Fuel, Car, UserPlus, Wrench, LogOut } from 'lucide-react';
+import { Activity, Fuel, Car, UserPlus, Wrench, CircleDollarSign, LogOut } from 'lucide-react';
 
 export default function Sidebar({ 
   activeTab, 
@@ -10,9 +10,11 @@ export default function Sidebar({
   setIsMobileMenuOpen, 
   handleLogout 
 }) {
+  
+  // This array sits safely inside the component
   const navItems = [
     { id: 'dashboard', icon: Activity, label: 'Live Activity' },
-    { id: 'cpk', icon: CircleDollarSign, label: 'CPK Analytics' }, // <-- Add CPK tab here
+    { id: 'cpk', icon: CircleDollarSign, label: 'CPK Analytics' },
     { id: 'fuel', icon: Fuel, label: 'Fuel Metrics' },
     { id: 'assets', icon: Car, label: 'Manage Vehicles' },
     { id: 'onboarding', icon: UserPlus, label: 'Manage Drivers' },

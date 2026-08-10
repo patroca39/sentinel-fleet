@@ -8,10 +8,12 @@ export default function Header({
   setIsMobileMenuOpen, 
   subscriptionTier 
 }) {
+  
+  // This must remain INSIDE the component so it can read the activeTab prop
   const getTabTitle = () => {
     switch(activeTab) {
       case 'dashboard': return 'Live Fleet Activity';
-      case 'cpk': return 'Cost-Per-Kilometer (CPK) Analytics'; // <-- Add CPK Title
+      case 'cpk': return 'Cost-Per-Kilometer (CPK) Analytics';
       case 'fuel': return 'Fuel Analytics & Pump Prices';
       case 'assets': return 'Vehicle Registry';
       case 'onboarding': return 'Driver Registry';
@@ -35,7 +37,6 @@ export default function Header({
       </div>
       
       <div className="flex items-center gap-4">
-        {/* FIX: Checking exactly for 'PRO' as it appears in your Supabase Database */}
         <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded shadow-sm hidden sm:inline-block ${subscriptionTier === 'PRO' ? 'bg-cyan-950/50 text-cyan-400 border border-cyan-900/50' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
           {subscriptionTier === 'PRO' ? 'Pro Tier' : 'Free Trial'}
         </span>
