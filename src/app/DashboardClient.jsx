@@ -8,6 +8,7 @@ import VehicleRegistry from '@/components/dashboard/VehicleRegistry';
 import FuelMarketRates from '@/components/dashboard/FuelMarketRates';
 import DriverRoster from '@/components/dashboard/DriverRoster';
 import RepairLedger from '@/components/dashboard/RepairLedger';
+import CpkAnalytics from '@/components/dashboard/CpkAnalytics';
 
 import UpgradeModal from '@/components/modals/UpgradeModal';
 import VehicleProfileModal from '@/components/modals/VehicleProfileModal';
@@ -19,16 +20,6 @@ import LandingPage from '@/components/landing/LandingPage';
 import Gatekeeper from '@/components/auth/Gatekeeper'; 
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import CpkAnalytics from '@/components/dashboard/CpkAnalytics';
-
-// Inside DashboardClient main render area:
-{activeTab === 'cpk' && (
-  <CpkAnalytics 
-    vehicles={vehicles}
-    fuelLogs={fuelLogs}
-    maintenanceHistory={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
-  />
-)}
 
 export default function DashboardClient({ 
   initialSession = null, 
@@ -43,18 +34,15 @@ export default function DashboardClient({
   const [session, setSession] = useState(initialSession);
   const router = useRouter();
 
-  // --- DASHBOARD STATES ---
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState(initialSubscriptionTier);
   
-  // STRICT SAFETY ENFORCEMENT ON STATE
   const [vehicles, setVehicles] = useState(Array.isArray(initialVehicles) ? initialVehicles : []);
   const [drivers, setDrivers] = useState(Array.isArray(initialDrivers) ? initialDrivers : []);
   const [fuelLogs, setFuelLogs] = useState(Array.isArray(initialFuelLogs) ? initialFuelLogs : []);
   const [anomalies, setAnomalies] = useState(Array.isArray(initialAnomalies) ? initialAnomalies : []); 
   
-  // --- MODAL & UI STATES ---
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState(null); 
   const [drillDownLedger, setDrillDownLedger] = useState(null);
@@ -62,12 +50,10 @@ export default function DashboardClient({
   const [selectedRepairLog, setSelectedRepairLog] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
 
-  // --- NEW DRIVER MANAGEMENT STATES ---
   const [newDriver, setNewDriver] = useState({ driverName: '', telegramId: '', vehicleId: '' });
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [revokeModal, setRevokeModal] = useState({ open: false, driver: null, reason: 'Resigned (Voluntary)' });
 
-  // --- ONBOARDING ROUTING LOGIC ---
   useEffect(() => {
     if (session && subscriptionTier === 'FREE_TRIAL') {
       const intendedPlan = localStorage.getItem('intended_plan');
@@ -79,7 +65,6 @@ export default function DashboardClient({
     }
   }, [session, subscriptionTier]);
   
-  // --- FLEET EXPANSION RECOVERY ---
   useEffect(() => {
     const checkPendingExpansion = async () => {
       const pendingStr = localStorage.getItem('pending_expansion_vehicle');
@@ -99,7 +84,6 @@ export default function DashboardClient({
     checkPendingExpansion();
   }, [subscriptionTier]); 
 
-  // --- DATA MAPPING LOGIC ---
   const processedFleet = useMemo(() => {
     const safeDrivers = Array.isArray(drivers) ? drivers : [];
     const safeAnomalies = Array.isArray(anomalies) ? anomalies : [];
@@ -177,7 +161,6 @@ export default function DashboardClient({
     });
   }, [processedFleet]);
 
-  // --- HANDLERS ---
   const handleLogout = async () => {
     try {
       const supabase = createClient();
@@ -236,7 +219,6 @@ export default function DashboardClient({
     }
   };
 
-  // --- PERSISTENT DRIVER MANAGEMENT HANDLERS ---
   const handleAuthorizeDriver = async (e) => {
     e.preventDefault();
     setIsAuthorizing(true);
@@ -244,7 +226,6 @@ export default function DashboardClient({
     try {
       const supabase = createClient();
       
-      // 1. Insert into Supabase (Standard select, no risky relational joins)
       const { data, error } = await supabase
         .from('drivers')
         .insert({
@@ -258,14 +239,12 @@ export default function DashboardClient({
 
       if (error) throw error;
 
-      // 2. Manually attach the vehicle data from our existing state to prevent the "Unknown" UI bug
       const assignedVehicle = vehicles.find(v => String(v.id) === String(data.assigned_vehicle_id));
       const completeDriverData = {
         ...data,
         vehicle_specs: assignedVehicle || null
       };
 
-      // 3. Update UI state with real database record
       setDrivers(prev => [...(Array.isArray(prev) ? prev : []), completeDriverData]);
       setNewDriver({ driverName: '', telegramId: '', vehicleId: '' });
       showToast("Driver registered successfully", "success");
@@ -283,7 +262,6 @@ export default function DashboardClient({
       const supabase = createClient();
       const valToUpdate = newVehicleId === "" ? null : newVehicleId;
 
-      // 1. Update assignment in Supabase
       const { data, error } = await supabase
         .from('drivers')
         .update({ assigned_vehicle_id: valToUpdate })
@@ -294,14 +272,12 @@ export default function DashboardClient({
 
       if (error) throw error;
 
-      // 2. Manually attach the new vehicle data
       const assignedVehicle = vehicles.find(v => String(v.id) === String(data.assigned_vehicle_id));
       const completeDriverData = {
         ...data,
         vehicle_specs: assignedVehicle || null
       };
 
-      // 3. Update UI state
       setDrivers(prev => (Array.isArray(prev) ? prev : []).map(d => d.id === driverId ? completeDriverData : d));
       showToast("Vehicle reassigned successfully", "success");
 
@@ -315,7 +291,6 @@ export default function DashboardClient({
     try {
       const supabase = createClient();
       
-      // 1. Delete driver record from Supabase
       const { error } = await supabase
         .from('drivers')
         .delete()
@@ -324,7 +299,6 @@ export default function DashboardClient({
 
       if (error) throw error;
 
-      // 2. Update UI state
       setDrivers(prev => (Array.isArray(prev) ? prev : []).filter(d => d.id !== revokeModal.driver.id));
       setRevokeModal({ open: false, driver: null, reason: 'Resigned (Voluntary)' });
       showToast("Driver released", "success");
@@ -358,18 +332,15 @@ export default function DashboardClient({
 
   const showToast = (message, type = 'info') => {
     console.log(`[Toast: ${type}]`, message); 
-    // Fallback to visual alert so you don't get silent failures
     if (type === 'error' || type === 'success') {
        alert(message);
     }
   };
 
-  // --- UNAUTHENTICATED RENDER ---
   if (!session) {
     return <LandingPage />;
   }
 
-  // --- AUTHENTICATED DASHBOARD RENDER (WRAPPED IN GATEKEEPER) ---
   return (
     <Gatekeeper user={session.user} setSubscriptionTier={setSubscriptionTier}>
       <div className="min-h-screen bg-slate-950 flex font-sans overflow-hidden text-slate-300 relative">
@@ -402,6 +373,14 @@ export default function DashboardClient({
                   setViewMode={setViewMode}
                   setSelectedDriver={setSelectedDriver} 
                   setPmsModal={() => {}}
+                />
+              )}
+
+              {activeTab === 'cpk' && (
+                <CpkAnalytics 
+                  vehicles={vehicles}
+                  fuelLogs={fuelLogs}
+                  maintenanceHistory={Array.isArray(initialMaintenanceHistory) ? initialMaintenanceHistory : []}
                 />
               )}
 
@@ -451,7 +430,6 @@ export default function DashboardClient({
           </main>
         </div>
 
-        {/* Modals */}
         {showUpgradeModal && (
           <UpgradeModal 
             session={session}
@@ -470,7 +448,6 @@ export default function DashboardClient({
             onClose={() => setSelectedDriver(null)}
             onOpenMaintenanceLedger={(driver) => setDrillDownLedger(driver)}
             onResolveAnomaly={handleResolveAnomaly}
-            onSelectRepairLog={setSelectedRepairLog}
           />
         )}
 

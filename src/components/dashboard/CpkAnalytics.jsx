@@ -37,15 +37,13 @@ export default function CpkAnalytics({
   fuelLogs = [], 
   maintenanceHistory = [] 
 }) {
-  const [timeRange, setTimeRange] = useState('all'); // 'all' | '30d' | '90d'
+  const [timeRange, setTimeRange] = useState('all');
 
-  // 1. SAFELY PROCESS & AGGREGATE CPK DATA
   const cpkMetrics = useMemo(() => {
     const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
     const safeFuel = Array.isArray(fuelLogs) ? fuelLogs : [];
     const safeMaint = Array.isArray(maintenanceHistory) ? maintenanceHistory : [];
 
-    // Aggregate totals across the entire fleet
     let totalFuelSpend = 0;
     let totalFuelVolume = 0;
     let totalMaintSpend = 0;
@@ -53,13 +51,11 @@ export default function CpkAnalytics({
     let totalLaborCost = 0;
     let totalConsumablesCost = 0;
 
-    // Process Fuel Spend
     safeFuel.forEach(log => {
       totalFuelSpend += Number(log.cost || 0);
       totalFuelVolume += Number(log.fuel_liters || 0);
     });
 
-    // Process Maintenance Spend & Itemized Breakdown
     safeMaint.forEach(log => {
       const cost = Number(log.total_cost || log.cost || 0);
       totalMaintSpend += cost;
@@ -70,9 +66,7 @@ export default function CpkAnalytics({
           breakdown = typeof log.cost_breakdown === 'string' 
             ? JSON.parse(log.cost_breakdown) 
             : log.cost_breakdown;
-        } catch (e) {
-          // Fallback if parsing fails
-        }
+        } catch (e) {}
       }
 
       totalPartsCost += Number(breakdown.parts || 0);
@@ -80,7 +74,6 @@ export default function CpkAnalytics({
       totalConsumablesCost += Number(breakdown.consumables || 0);
     });
 
-    // Calculate Fleet Distance Traveled
     let totalDistance = 0;
     const vehicleStats = safeVehicles.map(vehicle => {
       const vFuel = safeFuel.filter(f => f.vehicle_id === vehicle.id || String(f.driver_id) === String(vehicle.assigned_driver_id));
@@ -90,13 +83,12 @@ export default function CpkAnalytics({
       const vMaintCost = vMaint.reduce((sum, m) => sum + Number(m.total_cost || m.cost || 0), 0);
       const vTotalCost = vFuelCost + vMaintCost;
 
-      // Distance estimation based on min/max odometer readings in logs
       const odos = vFuel.map(f => Number(f.odometer || 0)).filter(o => o > 0);
       let vDistance = 0;
       if (odos.length >= 2) {
         vDistance = Math.max(...odos) - Math.min(...odos);
       } else if (vehicle.current_odo) {
-        vDistance = Math.max(0, vehicle.current_odo - 40000); // Fallback baseline estimate
+        vDistance = Math.max(0, vehicle.current_odo - 40000);
       }
 
       totalDistance += vDistance;
@@ -124,14 +116,12 @@ export default function CpkAnalytics({
     const fuelCpkOverall = totalDistance > 0 ? (totalFuelSpend / totalDistance) : 0;
     const maintCpkOverall = totalDistance > 0 ? (totalMaintSpend / totalDistance) : 0;
 
-    // Cost Breakdown Donut Data
-    // If parts/labor breakdown isn't explicit, fall back to general Fuel vs Maintenance
     const isItemizedAvailable = totalPartsCost > 0 || totalLaborCost > 0;
     const donutData = isItemizedAvailable ? [
-      { name: 'Fuel', value: totalFuelSpend, color: '#06b6d4' },        // cyan-500
-      { name: 'Parts', value: totalPartsCost, color: '#3b82f6' },       // blue-500
-      { name: 'Labor', value: totalLaborCost, color: '#f59e0b' },       // amber-500
-      { name: 'Consumables', value: totalConsumablesCost, color: '#10b981' } // emerald-500
+      { name: 'Fuel', value: totalFuelSpend, color: '#06b6d4' },
+      { name: 'Parts', value: totalPartsCost, color: '#3b82f6' },
+      { name: 'Labor', value: totalLaborCost, color: '#f59e0b' },
+      { name: 'Consumables', value: totalConsumablesCost, color: '#10b981' }
     ].filter(d => d.value > 0) : [
       { name: 'Fuel Operations', value: totalFuelSpend, color: '#06b6d4' },
       { name: 'Maintenance & Repairs', value: totalMaintSpend, color: '#f59e0b' }
@@ -150,7 +140,6 @@ export default function CpkAnalytics({
     };
   }, [vehicles, fuelLogs, maintenanceHistory]);
 
-  // 2. GENERATE TIME-SERIES MONTHLY CPK TREND (LAST 6 MONTHS)
   const monthlyTrendData = useMemo(() => {
     const months = [];
     const now = new Date();
@@ -173,9 +162,8 @@ export default function CpkAnalytics({
       const fuelCost = mFuel.reduce((sum, f) => sum + Number(f.cost || 0), 0);
       const maintCost = mMaint.reduce((sum, m) => sum + Number(m.total_cost || m.cost || 0), 0);
 
-      // Estimate distance for the month
       const fuelLiters = mFuel.reduce((sum, f) => sum + Number(f.fuel_liters || 0), 0);
-      const estDistance = fuelLiters > 0 ? fuelLiters * 8.5 : 1200; // Average 8.5 km/L baseline
+      const estDistance = fuelLiters > 0 ? fuelLiters * 8.5 : 1200;
 
       const totalCost = fuelCost + maintCost;
       const monthCpk = estDistance > 0 ? parseFloat((totalCost / estDistance).toFixed(2)) : 0;
@@ -193,8 +181,6 @@ export default function CpkAnalytics({
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      
-      {/* SECTION HEADER & CONTROLS */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
         <div>
           <h3 className="font-bold text-slate-100 text-lg flex items-center gap-2">
@@ -223,10 +209,7 @@ export default function CpkAnalytics({
         </div>
       </div>
 
-      {/* LAYER 1: MACRO KPI READOUTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* Fleet Average CPK */}
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl relative overflow-hidden shadow-xl">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500"></div>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fleet Average CPK</p>
@@ -242,7 +225,6 @@ export default function CpkAnalytics({
           </div>
         </div>
 
-        {/* Total Operating Spend */}
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl relative overflow-hidden shadow-xl">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Fleet Operating Spend</p>
@@ -254,7 +236,6 @@ export default function CpkAnalytics({
           </p>
         </div>
 
-        {/* Fuel vs Maintenance CPK Split */}
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl relative overflow-hidden shadow-xl">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500"></div>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CPK Cost Split</p>
@@ -271,7 +252,6 @@ export default function CpkAnalytics({
           <p className="text-[10px] text-slate-500 font-mono mt-2">Derived from verified receipts</p>
         </div>
 
-        {/* Total Distance Traveled */}
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl relative overflow-hidden shadow-xl">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Distance Traveled</p>
@@ -282,13 +262,9 @@ export default function CpkAnalytics({
             Across {vehicles.length} active registered unit{vehicles.length !== 1 ? 's' : ''}
           </p>
         </div>
-
       </div>
 
-      {/* LAYER 2 & 3: CHARTS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* LAYER 2: COST FLOW BREAKDOWN (DONUT CHART) */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl lg:col-span-1 flex flex-col justify-between">
           <div>
             <h4 className="font-bold text-slate-200 text-sm uppercase tracking-widest flex items-center gap-2 mb-1">
@@ -342,7 +318,6 @@ export default function CpkAnalytics({
           </div>
         </div>
 
-        {/* LAYER 3: TEMPORAL CPK TRENDS (LINE / BAR CHART) */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl lg:col-span-2">
           <div className="flex justify-between items-start mb-6">
             <div>
@@ -376,10 +351,8 @@ export default function CpkAnalytics({
             </ResponsiveContainer>
           </div>
         </div>
-
       </div>
 
-      {/* LAYER 4: MICRO LEDGER (VEHICLE UNIT CPK RANKINGS) */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
         <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
           <h4 className="font-bold text-slate-200 text-sm uppercase tracking-widest flex items-center gap-2">
@@ -435,7 +408,6 @@ export default function CpkAnalytics({
           </table>
         </div>
       </div>
-
     </div>
   );
 }
