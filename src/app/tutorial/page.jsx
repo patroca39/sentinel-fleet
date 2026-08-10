@@ -9,19 +9,15 @@ export default function TutorialPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden flex flex-col">
       
-      {/* Navbar */}
       <Navbar />
 
-      {/* Main Content Area */}
       <div className="flex-1 max-w-4xl mx-auto px-6 pt-36 pb-24 space-y-24">
         
-        {/* Header */}
         <div className="text-center space-y-4 border-b border-slate-800 pb-16">
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">System Manual</h1>
           <p className="text-lg text-slate-400">Mastering the SentinelFleet Command Center.</p>
         </div>
 
-        {/* Section 1: Digitizing Receipts */}
         <div className="space-y-8">
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">1. Validating AI Receipt Extraction</h2>
@@ -31,7 +27,6 @@ export default function TutorialPage() {
           </div>
 
           <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl w-full max-w-md mx-auto">
-            {/* UI Replica: Receipt Scanner Modal */}
             <div className="flex items-center gap-3 border-b border-slate-800 pb-4 mb-4">
               <div className="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
                 <Receipt className="w-5 h-5 text-amber-500" />
@@ -77,7 +72,6 @@ export default function TutorialPage() {
           </ul>
         </div>
 
-        {/* Section 2: Fraud Interception */}
         <div className="space-y-8 pt-8 border-t border-slate-800">
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">2. Managing Anomaly & Fraud Alerts</h2>
@@ -87,7 +81,6 @@ export default function TutorialPage() {
           </div>
 
           <div className="bg-slate-900/50 border border-rose-900/50 rounded-xl p-5 w-full max-w-xl mx-auto shadow-xl relative overflow-hidden">
-            {/* UI Replica: Fraud Alert Card */}
             <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
             <div className="flex items-start gap-4 pl-2">
               <div className="p-2.5 bg-rose-500/10 rounded-lg border border-rose-500/20 mt-1">
@@ -117,17 +110,15 @@ export default function TutorialPage() {
           </ul>
         </div>
 
-        {/* Section 3: Maintenance Ledger */}
         <div className="space-y-8 pt-8 border-t border-slate-800">
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">3. Itemized Repair Tracking</h2>
             <p className="text-slate-400 leading-relaxed">
-              Sentinel Fleet handles comprehensive maintenance tracking to ensure you never miss a PMS (Preventative Maintenance Schedule) interval. When viewing historical repairs, the system provides a granular breakdown of your shop costs.
+              Sentinel Fleet uses Google's Gemini 3.6 Vision AI to automatically handle complex maintenance tracking, ensuring you never miss a PMS (Preventative Maintenance Schedule) interval.
             </p>
           </div>
 
           <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl w-full max-w-lg mx-auto">
-             {/* UI Replica: Repair Details Modal */}
              <div className="flex gap-4 border-b border-slate-800 pb-4 mb-4">
               <div className="p-3 bg-slate-800 rounded-xl border border-slate-700">
                 <Wrench className="w-5 h-5 text-cyan-400" />
@@ -136,11 +127,6 @@ export default function TutorialPage() {
                 <h3 className="font-bold text-slate-100 text-lg">Transmission Overhaul</h3>
                 <p className="text-xs text-slate-400 font-mono mt-1">Isuzu NQR 71 - Unit 22</p>
               </div>
-            </div>
-
-            <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-3 mb-4">
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1.5 flex items-center gap-1.5"><MapPin className="w-3 h-3"/> Shop Location</p>
-              <p className="text-sm font-semibold text-slate-300">Ormoc Heavy Mechanics</p>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
@@ -172,14 +158,48 @@ export default function TutorialPage() {
           </ul>
         </div>
 
+        <div className="space-y-8 pt-8 border-t border-slate-800">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2">4. Cost-Per-Kilometer (CPK) Analytics</h2>
+            <p className="text-slate-400 leading-relaxed">
+              The CPK Intelligence dashboard aggregates all fuel and itemized maintenance logs into a single north-star metric: your Cost-Per-Kilometer. It isolates data down to the individual vehicle, exposing inefficient units that are dragging your margins down.
+            </p>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl w-full max-w-lg mx-auto">
+             <div className="flex gap-4 border-b border-slate-800 pb-4 mb-4">
+              <div className="p-3 bg-slate-800 rounded-xl border border-slate-700">
+                <CircleDollarSign className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-100 text-lg">Cost-Per-Kilometer (CPK)</h3>
+                <p className="text-xs text-slate-400 font-mono mt-1">Financial Efficiency Engine</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-4">
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Fleet Average CPK</p>
+                <p className="text-2xl font-black text-cyan-400 font-mono">₱6.45 <span className="text-xs text-slate-500">/km</span></p>
+              </div>
+              <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-4">
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Total Operating Spend</p>
+                <p className="text-2xl font-black text-emerald-400 font-mono">₱142.5k</p>
+              </div>
+            </div>
+          </div>
+
+          <ul className="list-disc list-outside ml-5 space-y-2 text-slate-400 text-sm">
+            <li>Navigate to the <strong className="text-cyan-400">CPK Analytics</strong> tab.</li>
+            <li>Filter the dashboard by <strong>Lifetime</strong> or <strong>Last 30 Days</strong> to isolate recent spending spikes.</li>
+            <li>Use the <strong>Unit Ledger</strong> at the bottom of the page to find exactly which driver or vehicle is accumulating the highest CPK.</li>
+          </ul>
+        </div>
+
       </div>
 
-      {/* Corporate Footer (Reused) */}
-      {/* Corporate Footer */}
       <footer className="border-t border-slate-800/50 bg-slate-950 py-12 px-6 mt-auto">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6 items-center">
-          
-          {/* Column 1: Brand */}
           <div className="flex items-center justify-center md:justify-start gap-3">
             <div className="w-8 h-8 flex items-center justify-center grayscale opacity-40">
               <ShieldCheck className="w-6 h-6 text-slate-500" />
@@ -188,24 +208,14 @@ export default function TutorialPage() {
               Sentinel<span className="font-light">Fleet</span>
             </span>
           </div>
-          
-          {/* Column 2: Contact & Legal */}
           <div className="text-center text-slate-500 text-sm space-y-1.5 flex flex-col justify-center">
             <p className="text-xs uppercase tracking-widest text-slate-600 font-bold mb-1">Contact & Support</p>
             <p>Email: <a href="mailto:rozenpasque@gmail.com" className="hover:text-cyan-400 transition-colors">rozenpasque@gmail.com</a></p>
-            <div className="pt-2 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest">
-              <Link href="/legal/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</Link>
-              <span className="text-slate-800">|</span>
-              <Link href="/legal/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</Link>
-            </div>
           </div>
-          
-          {/* Column 3: Copyright */}
           <div className="text-center md:text-right text-slate-500 text-sm space-y-1.5 flex flex-col justify-center">
             <p>&copy; 2026 <strong className="text-slate-400">Sentinel Soft Solutions</strong></p>
             <p className="text-xs text-slate-600 uppercase tracking-widest font-mono">Tacloban City, Philippines</p>
           </div>
-
         </div>
       </footer>
     </div>

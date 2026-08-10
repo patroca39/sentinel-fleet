@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Activity, Shield, ShieldAlert, ShieldCheck, ArrowRight, MessageSquare, BrainCircuit, LineChart, CheckCircle2, Loader2, Scan } from 'lucide-react';
+import { Activity, Shield, ShieldAlert, ShieldCheck, ArrowRight, MessageSquare, BrainCircuit, LineChart, CheckCircle2, Loader2, Scan, CircleDollarSign } from 'lucide-react';
 import Navbar from '../Navbar';
 
 export default function LandingPage() {
@@ -24,7 +24,7 @@ export default function LandingPage() {
 
     const mainTimer = setInterval(() => {
       if (!isSubscribed) return;
-      setActiveStep((prev) => (prev + 1) % 4);
+      setActiveStep((prev) => (prev + 1) % 5); // Updated to 5 steps
       runPhaseCycle();
     }, 4500);
 
@@ -59,8 +59,8 @@ export default function LandingPage() {
       )
     },
     {
-      title: "2. Vision AI Extraction",
-      desc: "Our proprietary AI instantly scans the receipt image, extracting the odometer reading, total liters, and cost with pinpoint accuracy. Say goodbye to manual data entry.",
+      title: "2. Dual-Engine AI Extraction",
+      desc: "Our architecture routes your receipts through GPT-4o for fuel and Gemini 3.6 for itemized maintenance, extracting odometers and complex costs with pinpoint accuracy.",
       icon: BrainCircuit,
       color: "text-purple-400",
       bgColor: "bg-purple-400/10",
@@ -80,8 +80,8 @@ export default function LandingPage() {
               </div>
               <div className="space-y-1 font-mono text-[10px] sm:text-xs">
                 <p className="text-slate-300"><span className="text-purple-400">"odometer":</span> 45210,</p>
-                <p className="text-slate-300"><span className="text-purple-400">"liters":</span> 65.0,</p>
-                <p className="text-slate-300"><span className="text-purple-400">"cost":</span> 5460.00</p>
+                <p className="text-slate-300"><span className="text-purple-400">"parts_cost":</span> 2500.0,</p>
+                <p className="text-slate-300"><span className="text-purple-400">"labor_cost":</span> 1200.00</p>
               </div>
               {phase === 'resolve' && (
                 <div className="text-[8px] sm:text-[10px] text-emerald-400 pt-2 border-t border-slate-800 font-bold uppercase tracking-widest flex items-center gap-1 animate-in fade-in">
@@ -159,19 +159,49 @@ export default function LandingPage() {
           </div>
         </div>
       )
+    },
+    {
+      title: "5. Lifecycle CPK Analytics",
+      desc: "Track exactly how much you burn per kilometer. The system aggregates fuel and itemized maintenance costs into a single, real-time Cost-Per-Kilometer (CPK) dashboard.",
+      icon: CircleDollarSign,
+      color: "text-amber-400",
+      bgColor: "bg-amber-400/10",
+      borderColor: "border-amber-400/50",
+      visual: (
+        <div className="p-4 h-full flex items-center justify-center">
+          <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-4 w-full">
+             <div className="flex items-center gap-2 mb-2">
+               <CircleDollarSign className="w-4 h-4 text-amber-500" />
+               <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Fleet Average CPK</p>
+             </div>
+             {phase === 'start' ? (
+                <p className="text-3xl font-black text-slate-700 font-mono mb-3">₱-.-- <span className="text-sm text-slate-600">/ km</span></p>
+             ) : (
+                <p className="text-3xl font-black text-amber-400 font-mono mb-3">₱6.45 <span className="text-sm text-slate-500">/ km</span></p>
+             )}
+             <div className="space-y-2 pt-3 border-t border-slate-800">
+                <div className="flex justify-between items-center text-xs font-mono">
+                  <span className="text-slate-400">Fuel CPK</span>
+                  <span className="font-bold text-cyan-400">₱4.10/km</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-mono">
+                  <span className="text-slate-400">Maint CPK</span>
+                  <span className="font-bold text-rose-400">₱2.35/km</span>
+                </div>
+             </div>
+          </div>
+        </div>
+      )
     }
   ];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden flex flex-col">
       
-      {/* Cleaned up Navbar integration */}
       <Navbar />
 
-      {/* Main Content Area */}
       <div className="flex-1">
         
-        {/* Hero Section */}
         <section className="pt-32 sm:pt-40 pb-16 sm:pb-20 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-950/50 border border-cyan-900/50 text-cyan-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-2 sm:mb-4">
@@ -199,7 +229,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Animated Walkthrough Section */}
         <section className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-900/30 border-y border-slate-800/50">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12 sm:mb-16">
@@ -208,8 +237,7 @@ export default function LandingPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center max-w-5xl mx-auto">
-              {/* Interactive Visualizer */}
-              <div className="relative h-[280px] sm:h-[400px] rounded-xl sm:rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden flex flex-col order-first lg:order-none">
+              <div className="relative h-[320px] sm:h-[400px] rounded-xl sm:rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl overflow-hidden flex flex-col order-first lg:order-none">
                 <div className="h-8 sm:h-10 bg-slate-900 border-b border-slate-800 flex items-center px-3 sm:px-4 gap-1.5 sm:gap-2">
                   <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-rose-500/50"></div>
                   <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-500/50"></div>
@@ -222,7 +250,6 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Step Indicators */}
               <div className="space-y-3 sm:space-y-4">
                 {walkthroughSteps.map((step, index) => {
                   const isActive = activeStep === index;
@@ -261,7 +288,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Pricing Module */}
         <section className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12 sm:mb-16">
@@ -275,7 +301,6 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               
-              {/* Tactical Pilot Card (Free Tier) */}
               <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-8 shadow-lg flex flex-col">
                 <h3 className="text-2xl font-semibold mb-2 text-white">Tactical Pilot</h3>
                 <p className="text-sm text-slate-400 mb-6">30-Day Evaluation</p>
@@ -301,7 +326,6 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              {/* Command Tier Card (Pro Tier) */}
               <div className="bg-[#0f172a] border border-cyan-500 rounded-2xl p-8 relative shadow-[0_0_30px_rgba(6,182,212,0.15)] flex flex-col">
                 <div className="absolute top-0 right-0 bg-cyan-500 text-xs font-bold px-4 py-1.5 rounded-bl-xl rounded-tr-xl text-black tracking-wider">
                   COMMERCIAL
@@ -318,10 +342,10 @@ export default function LandingPage() {
                     <span className="text-cyan-400 mr-3">✓</span> Core Infrastructure (Up to 4 Vehicles)
                   </li>
                   <li className="flex items-center">
-                    <span className="text-cyan-400 mr-3">✓</span> Frictionless Scaling (+₱250/mo per extra unit)
+                    <span className="text-cyan-400 mr-3">✓</span> AI-Powered Fraud & Anomaly Shield
                   </li>
                   <li className="flex items-center">
-                    <span className="text-cyan-400 mr-3">✓</span> AI-Powered Fraud & Anomaly Shield
+                    <span className="text-cyan-400 mr-3">✓</span> Cost-Per-Kilometer (CPK) Analytics Engine
                   </li>
                 </ul>
                 
@@ -337,38 +361,39 @@ export default function LandingPage() {
           </div>
         </section>
       </div>
-      
-      {/* Corporate Footer */}
-      <footer className="border-t border-slate-800/50 bg-slate-950 py-12 px-6 mt-auto">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6 items-center">
+
+      <footer className="border-t border-slate-800/50 bg-slate-950 py-10 sm:py-12 px-4 sm:px-6 mt-auto">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 items-center">
           
-          {/* Column 1: Brand */}
           <div className="flex items-center justify-center md:justify-start gap-3">
-            <div className="w-8 h-8 flex items-center justify-center grayscale opacity-40">
-              <ShieldCheck className="w-6 h-6 text-slate-500" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center grayscale opacity-40">
+              <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full overflow-visible">
+                  <path d="M 32 10 C 50 10 60 32 60 32 C 60 32 50 54 32 54 C 14 54 4 32 4 32 C 4 32 14 10 32 10 Z" fill="#020617" stroke="#64748b" strokeWidth="2.5" strokeLinejoin="round"/>
+                  <circle cx="32" cy="32" r="10" stroke="#64748b" strokeWidth="2.5"/>
+                  <circle cx="32" cy="32" r="3.5" fill="#64748b"/>
+                  <path d="M 32 18 V 22 M 32 42 V 46 M 18 32 H 22 M 42 32 H 46" stroke="#64748b" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
             </div>
-            <span className="text-slate-500 text-sm font-bold tracking-wide">
+            <span className="text-slate-500 text-xs sm:text-sm font-bold tracking-wide">
               Sentinel<span className="font-light">Fleet</span>
             </span>
           </div>
-          
-          {/* Column 2: Contact & Legal */}
-          <div className="text-center text-slate-500 text-sm space-y-1.5 flex flex-col justify-center">
-            <p className="text-xs uppercase tracking-widest text-slate-600 font-bold mb-1">Contact & Support</p>
-            <p>Email: <a href="mailto:rozenpasque@gmail.com" className="hover:text-cyan-400 transition-colors">rozenpasque@gmail.com</a></p>
-            <div className="pt-2 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest">
-              <Link href="/legal/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</Link>
-              <span className="text-slate-800">|</span>
-              <Link href="/legal/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</Link>
-            </div>
-          </div>
-          
-          {/* Column 3: Copyright */}
-          <div className="text-center md:text-right text-slate-500 text-sm space-y-1.5 flex flex-col justify-center">
-            <p>&copy; 2026 <strong className="text-slate-400">Sentinel Soft Solutions</strong></p>
-            <p className="text-xs text-slate-600 uppercase tracking-widest font-mono">Tacloban City, Philippines</p>
-          </div>
 
+          <div className="text-center text-slate-500 text-xs sm:text-sm space-y-1 sm:space-y-1.5 flex flex-col justify-center">
+            <p className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-600 font-bold mb-1">Contact & Support</p>
+            <p>
+              Email: <a href="mailto:rozenpasque@gmail.com" className="text-slate-400 hover:text-cyan-400 transition-colors break-all">rozenpasque@gmail.com</a>
+            </p>
+            <p className="px-4">
+              Phone: <span className="text-slate-400 block sm:inline mt-1 sm:mt-0">096050503433 (Smart)</span> <span className="hidden sm:inline">/</span> <span className="text-slate-400 block sm:inline">09631510210 (TNT)</span>
+            </p>
+          </div>
+          
+          <div className="text-center md:text-right text-slate-500 text-xs sm:text-sm space-y-1 sm:space-y-1.5 flex flex-col justify-center">
+            <p>&copy; 2026 <strong className="text-slate-400">Sentinel Soft Solutions</strong></p>
+            <p className="text-[10px] sm:text-xs text-slate-600 uppercase tracking-widest font-mono">Tacloban City, Philippines</p>
+          </div>
+          
         </div>
       </footer>
     </div>
