@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Activity, ShieldAlert, CheckCircle2, AlertTriangle, LayoutGrid, List } from 'lucide-react';
+import { Activity, Car, ShieldAlert, CheckCircle2, AlertTriangle, LayoutGrid, List, Camera } from 'lucide-react';
 
 export default function LiveActivityFeed({
   isLoadingData,
@@ -28,10 +28,8 @@ export default function LiveActivityFeed({
     );
   }
 
-  // Helper to ensure we pass the correct base driver object to the modal
   const handleInvestigateClick = (e, anomalyData) => {
     e.preventDefault();
-    // Re-link the anomaly back to the root driver object so the modal math doesn't crash
     const rootDriver = processedFleet.find(d => String(d.telegram_id) === String(anomalyData.driver_id)) || anomalyData;
     setSelectedDriver(rootDriver);
   };
@@ -118,6 +116,13 @@ export default function LiveActivityFeed({
                         >
                           View Details
                         </button>
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); setPmsModal({ open: true, driver: driver, latestOdo: driver.latestOdo }); }} 
+                          className="px-5 py-3 bg-amber-900/50 hover:bg-amber-800/80 text-amber-200 text-xs font-bold uppercase tracking-widest rounded border border-amber-800 transition-colors flex items-center gap-2"
+                        >
+                          <Camera className="w-4 h-4" /> Save Receipt
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -141,32 +146,62 @@ export default function LiveActivityFeed({
                   const v = driver.vehicle_specs || {};
                   const latestOdo = driver.latestOdo || 0;
                   const nextPms = v.next_pms || (latestOdo + 10000);
-                  const isHealthy = (nextPms - latestOdo) > 1000 && !driver.isFraudulent;
+                  const distanceToPms = nextPms - latestOdo;
+                  const isHealthy = distanceToPms > 1000 && !driver.isFraudulent;
                   
+                  // HEALTH BAR MATH
+                  const healthPercent = Math.max(0, Math.min(100, (distanceToPms / 10000) * 100));
+                  let healthColor = 'bg-emerald-500';
+                  let textColor = 'text-emerald-400';
+                  if (healthPercent < 10) { healthColor = 'bg-rose-500'; textColor = 'text-rose-400'; }
+                  else if (healthPercent < 30) { healthColor = 'bg-amber-500'; textColor = 'text-amber-400'; }
+
                   return (
                     <div 
                       key={driver.id} 
                       onClick={(e) => handleCardClick(e, driver)} 
-                      className={`bg-slate-900 p-6 rounded-xl border transition-all relative overflow-hidden shadow-lg cursor-pointer ${driver.isFraudulent ? 'border-rose-900/50 shadow-rose-900/10 hover:border-rose-500' : 'border-slate-800 hover:border-cyan-800'}`}
+                      className={`bg-slate-900 p-6 rounded-xl border transition-all relative overflow-hidden shadow-lg cursor-pointer flex flex-col justify-between ${driver.isFraudulent ? 'border-rose-900/50 shadow-rose-900/10 hover:border-rose-500' : 'border-slate-800 hover:border-cyan-800'}`}
                     >
                       <div className={`absolute top-0 left-0 w-full h-1 transition-colors ${driver.isFraudulent ? 'bg-rose-500' : 'bg-slate-800 group-hover:bg-cyan-500'}`}></div>
-                      <div className="flex justify-between items-start mb-6 pt-2">
-                        <div>
-                          <h4 className="font-bold text-slate-100 text-lg">{driver.driver_name}</h4>
-                          <p className="text-[10px] text-slate-500 font-mono mt-1 uppercase tracking-widest">ID: {driver.telegram_id}</p>
+                      
+                      <div>
+                        <div className="flex justify-between items-start mb-6 pt-2">
+                          <div>
+                            <h4 className="font-bold text-slate-100 text-lg">{driver.driver_name}</h4>
+                            <p className="text-[10px] text-slate-500 font-mono mt-1 uppercase tracking-widest">ID: {driver.telegram_id}</p>
+                          </div>
+                          <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${driver.isFraudulent ? 'bg-rose-950/80 text-rose-400 border border-rose-900 animate-pulse' : isHealthy ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-900/50' : 'bg-amber-950/50 text-amber-400 border border-amber-900/50'}`}>
+                            {driver.isFraudulent ? 'Fuel Drop' : isHealthy ? 'Nominal' : 'PMS Due'}
+                          </span>
                         </div>
-                        <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${driver.isFraudulent ? 'bg-rose-950/80 text-rose-400 border border-rose-900 animate-pulse' : isHealthy ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-900/50' : 'bg-amber-950/50 text-amber-400 border border-amber-900/50'}`}>
-                          {driver.isFraudulent ? 'Fuel Drop' : isHealthy ? 'Nominal' : 'PMS Due'}
-                        </span>
+
+                        <div className="bg-slate-950 p-4 rounded border border-slate-800/50 mb-4">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Assigned Vehicle</p>
+                          <p className="text-base font-semibold text-slate-200 truncate">{v.model_name || 'Unassigned Vehicle'}</p>
+                        </div>
+                        
+                        <div className="flex justify-between items-baseline mb-4">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Odometer</span>
+                          <span className="font-bold text-cyan-400 font-mono text-lg">{latestOdo.toLocaleString()} <span className="text-slate-600 text-xs">km</span></span>
+                        </div>
                       </div>
-                      <div className="bg-slate-950 p-4 rounded border border-slate-800/50 mb-6">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Assigned Vehicle</p>
-                        <p className="text-base font-semibold text-slate-200 truncate">{v.model_name || 'Unassigned Vehicle'}</p>
+
+                      {/* NEW PMS HEALTH BAR */}
+                      <div className="mt-2 space-y-1.5">
+                        <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-bold">
+                          <span className="text-slate-500">PMS Health</span>
+                          <span className={textColor}>
+                            {distanceToPms > 0 ? `${distanceToPms.toLocaleString()} km left` : 'OVERDUE'}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-800 overflow-hidden">
+                          <div 
+                            className={`h-full ${healthColor} transition-all duration-1000`} 
+                            style={{ width: `${healthPercent}%` }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-baseline mb-3">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Odometer</span>
-                        <span className="font-bold text-cyan-400 font-mono text-lg">{latestOdo.toLocaleString()} <span className="text-slate-600 text-xs">km</span></span>
-                      </div>
+
                     </div>
                   )
                 })}
@@ -181,7 +216,7 @@ export default function LiveActivityFeed({
                       <tr>
                         <th className="px-8 py-5">Driver & Vehicle</th>
                         <th className="px-8 py-5">Current Odometer</th>
-                        <th className="px-8 py-5">Next PMS Target</th>
+                        <th className="px-8 py-5">PMS Health</th>
                         <th className="px-8 py-5 text-right">Status</th>
                       </tr>
                     </thead>
@@ -190,7 +225,14 @@ export default function LiveActivityFeed({
                         const v = driver.vehicle_specs || {};
                         const latestOdo = driver.latestOdo || 0;
                         const nextPms = v.next_pms || (latestOdo + 10000);
-                        const isHealthy = (nextPms - latestOdo) > 1000 && !driver.isFraudulent;
+                        const distanceToPms = nextPms - latestOdo;
+                        const isHealthy = distanceToPms > 1000 && !driver.isFraudulent;
+
+                        const healthPercent = Math.max(0, Math.min(100, (distanceToPms / 10000) * 100));
+                        let healthColor = 'bg-emerald-500';
+                        let textColor = 'text-emerald-400';
+                        if (healthPercent < 10) { healthColor = 'bg-rose-500'; textColor = 'text-rose-400'; }
+                        else if (healthPercent < 30) { healthColor = 'bg-amber-500'; textColor = 'text-amber-400'; }
 
                         return (
                           <tr 
@@ -205,8 +247,18 @@ export default function LiveActivityFeed({
                             <td className="px-8 py-5 font-mono text-slate-300 text-sm">
                               {latestOdo.toLocaleString()} <span className="text-slate-600 text-xs">km</span>
                             </td>
-                            <td className="px-8 py-5 font-mono text-slate-400 text-sm">
-                              {nextPms.toLocaleString()} <span className="text-slate-600 text-xs">km</span>
+                            <td className="px-8 py-5 min-w-[200px]">
+                               {/* NEW PMS HEALTH BAR (LIST VIEW) */}
+                               <div className="space-y-1.5 w-full">
+                                  <div className="flex justify-between items-center text-[10px] uppercase tracking-widest font-bold">
+                                    <span className={textColor}>
+                                      {distanceToPms > 0 ? `${distanceToPms.toLocaleString()} km left` : 'OVERDUE'}
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-800 overflow-hidden">
+                                    <div className={`h-full ${healthColor} transition-all duration-1000`} style={{ width: `${healthPercent}%` }}></div>
+                                  </div>
+                                </div>
                             </td>
                             <td className="px-8 py-5 text-right">
                               <span className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider ${driver.isFraudulent ? 'bg-rose-950/80 text-rose-400 animate-pulse border border-rose-900' : isHealthy ? 'bg-emerald-950/30 text-emerald-500' : 'bg-amber-950/50 text-amber-400 border border-amber-900/50'}`}>
