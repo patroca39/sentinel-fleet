@@ -1,13 +1,15 @@
 "use client";
 
 import React from 'react';
-import { TrendingUp, Filter, Calendar, Users, FileQuestion, Droplet } from 'lucide-react';
+import { TrendingUp, Filter, Calendar, Users, FileQuestion, Droplet, Edit3 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function FuelMarketRates({
   marketRates = [],
   fuelLogs = [],
   vehicles = [],
+  drivers = [],
+  onEditReceipt = () => {},
   ingestionDate = 'all',
   setIngestionDate = () => {},
   ingestionDriver = 'all',
@@ -97,11 +99,20 @@ export default function FuelMarketRates({
                   <th className="px-8 py-5 uppercase tracking-wider">Vehicle</th>
                   <th className="px-8 py-5 uppercase tracking-wider">Efficiency</th>
                   <th className="px-8 py-5 uppercase tracking-wider text-right">Volume</th>
+                  <th className="px-8 py-5 uppercase tracking-wider text-right">Cost</th>
+                  <th className="px-8 py-5 uppercase tracking-wider text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {displayLogs.map((log, idx) => {
-                  const matchingVehicle = vehicles.find(v => v.id === log.vehicle_id);
+                  // Resolve the vehicle associated with this log
+                  // First, try matching directly via log.vehicle (if present as a model_name string)
+                  // Otherwise, find the driver matching the log.driver_id and locate their assigned vehicle
+                  const matchingDriver = (drivers || []).find(d => String(d.telegram_id) === String(log.driver_id));
+                  const matchingVehicle = log.vehicle 
+                    ? { model_name: log.vehicle } 
+                    : (vehicles.find(v => v.id === log.vehicle_id) || matchingDriver?.vehicle_specs || vehicles.find(v => v.id === matchingDriver?.assigned_vehicle_id));
+
                   return (
                     <tr key={log.id || idx} className="hover:bg-slate-800/50">
                       <td className="px-8 py-5 text-slate-500 flex flex-col">
@@ -111,6 +122,15 @@ export default function FuelMarketRates({
                       <td className="px-8 py-5 text-slate-300">{matchingVehicle?.model_name || 'Assigned Fleet Unit'}</td>
                       <td className="px-8 py-5 text-slate-400">{log.efficiency ? `${log.efficiency} km/L` : 'N/A'}</td>
                       <td className="px-8 py-5 font-bold text-cyan-400 text-right text-base">{log.fuel_liters} L</td>
+                      <td className="px-8 py-5 font-bold text-emerald-400 text-right text-base">₱{log.cost ? Number(log.cost).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}</td>
+                      <td className="px-8 py-5 text-center">
+                        <button 
+                          onClick={() => onEditReceipt && onEditReceipt(log)}
+                          className="px-3.5 py-1.5 bg-slate-950 hover:bg-slate-850 text-slate-300 hover:text-cyan-400 rounded-lg transition-colors border border-slate-800 hover:border-cyan-500/30 flex items-center gap-1.5 mx-auto text-xs uppercase tracking-wider font-bold shadow-md"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" /> Edit
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}

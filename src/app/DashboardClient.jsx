@@ -16,6 +16,7 @@ import MaintenanceLedgerModal from '@/components/modals/MaintenanceLedgerModal';
 import RevokeDriverModal from '@/components/modals/RevokeDriverModal';
 import ReceiptScannerModal from '@/components/modals/ReceiptScannerModal';
 import RepairDetailsModal from '@/components/modals/RepairDetailsModal';
+import PmsInstructionsModal from '@/components/modals/PmsInstructionsModal';
 import LandingPage from '@/components/landing/LandingPage';
 import Gatekeeper from '@/components/auth/Gatekeeper'; 
 import { createClient } from '@/utils/supabase/client';
@@ -50,6 +51,7 @@ export default function DashboardClient({
   const [drillDownLedger, setDrillDownLedger] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [selectedRepairLog, setSelectedRepairLog] = useState(null);
+  const [pmsModal, setPmsModal] = useState({ open: false, driver: null, latestOdo: null });
   const [viewMode, setViewMode] = useState('grid');
 
   const [newDriver, setNewDriver] = useState({ driverName: '', telegramId: '', vehicleId: '' });
@@ -374,7 +376,7 @@ export default function DashboardClient({
                   viewMode={viewMode}
                   setViewMode={setViewMode}
                   setSelectedDriver={setSelectedDriver} 
-                  setPmsModal={() => {}}
+                  setPmsModal={setPmsModal}
                 />
               )}
 
@@ -402,9 +404,11 @@ export default function DashboardClient({
                 <FuelMarketRates 
                   fuelLogs={fuelLogs}
                   vehicles={vehicles}
+                  drivers={drivers}
                   marketRates={initialMarketRates || []}
                   uniqueVaultDrivers={(Array.isArray(drivers) ? drivers : []).map(d => ({ id: d.telegram_id, name: d.driver_name }))}
                   filteredFuelLogs={fuelLogs}
+                  onEditReceipt={setSelectedReceipt}
                 />
               )}
 
@@ -474,6 +478,14 @@ export default function DashboardClient({
           <RepairDetailsModal 
             log={selectedRepairLog}
             onClose={() => setSelectedRepairLog(null)}
+          />
+        )}
+
+        {pmsModal.open && (
+          <PmsInstructionsModal 
+            driver={pmsModal.driver}
+            latestOdo={pmsModal.latestOdo}
+            onClose={() => setPmsModal({ open: false, driver: null, latestOdo: null })}
           />
         )}
 

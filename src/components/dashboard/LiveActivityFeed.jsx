@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Activity, Car, ShieldAlert, CheckCircle2, AlertTriangle, LayoutGrid, List, Camera, User, Milestones, Eye } from 'lucide-react';
+import { Activity, Car, ShieldAlert, CheckCircle2, AlertTriangle, LayoutGrid, List, Camera, User, Milestones, Eye, HelpCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -150,9 +150,9 @@ export default function LiveActivityFeed({
                             e.stopPropagation();
                             setPmsModal({ open: true, driver: driver, latestOdo: driver.latestOdo }); 
                           }} 
-                          className="uppercase tracking-widest text-[10px] font-bold flex items-center gap-1.5"
+                          className="uppercase tracking-widest text-[10px] font-bold flex items-center gap-1.5 hover:border-amber-500/30 hover:text-amber-400 transition-colors"
                         >
-                          <Camera className="w-3.5 h-3.5" /> Save Receipt
+                          <HelpCircle className="w-3.5 h-3.5" /> How to Log
                         </Button>
                       </div>
                     </div>
