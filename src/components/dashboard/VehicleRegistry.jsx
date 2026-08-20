@@ -6,6 +6,7 @@ import { Trash2, Plus, Activity, Settings2, ShieldCheck } from 'lucide-react';
 export default function VehicleRegistry({ 
   vehicles = [], 
   subscriptionTier = 'FREE_TRIAL', 
+  allowedFleetSize = null,
   handleAddVehicle, 
   handleDeleteVehicle, 
   showToast, 
@@ -35,9 +36,12 @@ export default function VehicleRegistry({
 
     let limitReached = false;
     
-    if (subscriptionTier === 'FREE_TRIAL' && currentCount >= 1) {
-      limitReached = true;
-    } else if (subscriptionTier === 'PRO' && currentCount >= 4) {
+    // Check limit dynamically against database operator profile allowed_fleet_size, falling back to defaults
+    const maxAllowed = allowedFleetSize !== null && allowedFleetSize !== undefined
+      ? allowedFleetSize
+      : (subscriptionTier === 'FREE_TRIAL' ? 1 : 4);
+
+    if (currentCount >= maxAllowed) {
       limitReached = true;
     }
 

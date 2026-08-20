@@ -5,7 +5,7 @@ import { X, Receipt, Save, Loader2, Calendar, User, Activity, Droplets, CircleDo
 import { createClient } from '@/utils/supabase/client';
 import { format } from 'date-fns';
 
-export default function ReceiptScannerModal({ log, onClose }) {
+export default function ReceiptScannerModal({ log, session, onClose }) {
   const [isSaving, setIsSaving] = useState(false);
   
   // STRICT SAFETY: Initialize editable state with the log's current values
@@ -32,7 +32,9 @@ export default function ReceiptScannerModal({ log, onClose }) {
     const supabase = createClient();
     
     try {
-      const { error } = await supabase
+      const operatorId = session?.user?.id;
+      
+      let query = supabase
         .from('logs')
         .update({
           cost: Number(formData.cost),
@@ -40,6 +42,12 @@ export default function ReceiptScannerModal({ log, onClose }) {
           odometer: Number(formData.odometer)
         })
         .eq('id', log.id);
+
+      if (operatorId) {
+        query = query.eq('operator_id', operatorId);
+      }
+
+      const { error } = await query;
 
       if (error) throw error;
       

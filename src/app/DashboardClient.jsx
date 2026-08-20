@@ -29,7 +29,8 @@ export default function DashboardClient({
   initialMaintenanceHistory = [], 
   initialMarketRates = [], 
   initialAnomalies = [], 
-  initialSubscriptionTier = 'FREE_TRIAL' 
+  initialSubscriptionTier = 'FREE_TRIAL',
+  initialAllowedFleetSize = null
 }) {
   const [session, setSession] = useState(initialSession);
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function DashboardClient({
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState(initialSubscriptionTier);
+  const [allowedFleetSize, setAllowedFleetSize] = useState(initialAllowedFleetSize);
   
   const [vehicles, setVehicles] = useState(Array.isArray(initialVehicles) ? initialVehicles : []);
   const [drivers, setDrivers] = useState(Array.isArray(initialDrivers) ? initialDrivers : []);
@@ -174,7 +176,7 @@ export default function DashboardClient({
     }
   };
 
-  const handleAddVehicle = async (newVehicle) => {
+  async function handleAddVehicle(newVehicle) {
     try {
       const supabase = createClient();
       
@@ -342,7 +344,7 @@ export default function DashboardClient({
   }
 
   return (
-    <Gatekeeper user={session.user} setSubscriptionTier={setSubscriptionTier}>
+    <Gatekeeper user={session.user} setSubscriptionTier={setSubscriptionTier} setAllowedFleetSize={setAllowedFleetSize}>
       <div className="min-h-screen bg-slate-950 flex font-sans overflow-hidden text-slate-300 relative">
         <Sidebar 
           activeTab={activeTab} 
@@ -352,7 +354,7 @@ export default function DashboardClient({
           handleLogout={handleLogout}
         />
         
-        <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col h-screen overflow-hidden md:pl-72">
           <Header 
             activeTab={activeTab} 
             setIsMobileMenuOpen={setIsMobileMenuOpen} 
@@ -388,6 +390,7 @@ export default function DashboardClient({
                 <VehicleRegistry 
                   vehicles={vehicles}
                   subscriptionTier={subscriptionTier}
+                  allowedFleetSize={allowedFleetSize}
                   handleAddVehicle={handleAddVehicle}
                   handleDeleteVehicle={handleDeleteVehicle}
                   showToast={showToast}
@@ -462,6 +465,7 @@ export default function DashboardClient({
         {selectedReceipt && (
           <ReceiptScannerModal 
             log={selectedReceipt}
+            session={session}
             onClose={() => setSelectedReceipt(null)}
           />
         )}

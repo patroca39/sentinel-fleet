@@ -11,7 +11,6 @@ export default function Sidebar({
   handleLogout 
 }) {
   
-  // This array sits safely inside the component
   const navItems = [
     { id: 'dashboard', icon: Activity, label: 'Live Activity' },
     { id: 'cpk', icon: CircleDollarSign, label: 'CPK Analytics' },
@@ -31,13 +30,18 @@ export default function Sidebar({
         />
       )}
 
-      {/* Sidebar Container */}
-      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 border-r border-slate-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* Floating Sidebar Container */}
+      <div className={`
+        fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 border-r border-slate-800 flex flex-col 
+        transform transition-transform duration-300 ease-in-out
+        md:fixed md:top-4 md:bottom-4 md:left-4 md:h-[calc(100vh-2rem)] md:translate-x-0 md:rounded-2xl md:border shadow-2xl shadow-slate-950/50
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         
         {/* Brand Header */}
-        <div className="p-8 border-b border-slate-800">
-          <h1 className="text-slate-100 font-bold text-2xl flex items-center gap-3 tracking-tight">
-            <svg width="30" height="30" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 overflow-visible">
+        <div className="p-6 border-b border-slate-800">
+          <h1 className="text-slate-100 font-bold text-xl flex items-center gap-3 tracking-tight">
+            <svg width="26" height="26" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 overflow-visible">
                 <defs>
                     <filter id="glowSentinelSidebar" x="-50%" y="-50%" width="200%" height="200%">
                         <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1" />
@@ -58,11 +62,11 @@ export default function Sidebar({
             </svg>
             Sentinel<span className="font-light text-cyan-400">Fleet</span>
           </h1>
-          <p className="text-[10px] text-slate-500 font-mono mt-2 uppercase tracking-widest">Command Center</p>
+          <p className="text-[9px] text-slate-500 font-mono mt-1.5 uppercase tracking-widest">Command Center</p>
         </div>
         
         {/* Navigation Links */}
-        <nav className="flex-1 p-6 space-y-2">
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
           {navItems.map(item => (
             <button 
               key={item.id} 
@@ -70,7 +74,7 @@ export default function Sidebar({
                 setActiveTab(item.id); 
                 setIsMobileMenuOpen(false);
               }} 
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id ? 'bg-cyan-950/40 text-cyan-400 border border-cyan-900/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === item.id ? 'bg-cyan-950/40 text-cyan-400 border border-cyan-900/30 shadow-md shadow-cyan-950/20' : 'text-slate-400 border border-transparent hover:bg-slate-800 hover:text-slate-200'}`}
             >
               <item.icon className="w-4 h-4" /> {item.label}
             </button>
@@ -78,8 +82,8 @@ export default function Sidebar({
         </nav>
         
         {/* Footer / Logout */}
-        <div className="p-6 border-t border-slate-800">
-           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-lg text-sm font-medium text-rose-500 hover:bg-rose-950/30 transition-colors">
+        <div className="p-4 border-t border-slate-800">
+           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium text-rose-500 hover:bg-rose-950/30 transition-colors border border-transparent hover:border-rose-900/50">
               <LogOut className="w-4 h-4" /> Sign Out
            </button>
         </div>

@@ -9,7 +9,6 @@ export default function Header({
   subscriptionTier 
 }) {
   
-  // This must remain INSIDE the component so it can read the activeTab prop
   const getTabTitle = () => {
     switch(activeTab) {
       case 'dashboard': return 'Live Fleet Activity';
@@ -23,15 +22,15 @@ export default function Header({
   };
 
   return (
-    <header className="bg-slate-900/50 backdrop-blur-md border-b border-slate-800 px-8 py-5 flex justify-between items-center z-10 shrink-0">
+    <header className="bg-slate-900/80 backdrop-blur-md border border-slate-800 px-6 py-4 flex justify-between items-center z-10 shrink-0 mx-4 mt-4 md:mx-6 md:mt-4 rounded-xl shadow-lg shadow-slate-950/25">
       <div className="flex items-center gap-4">
         <button 
           className="md:hidden text-slate-400 hover:text-slate-200 transition-colors" 
           onClick={() => setIsMobileMenuOpen(true)}
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5" />
         </button>
-        <h2 className="text-xl font-bold text-slate-100 capitalize tracking-wide">
+        <h2 className="text-lg font-bold text-slate-100 capitalize tracking-wide">
           {getTabTitle()}
         </h2>
       </div>
@@ -41,12 +40,12 @@ export default function Header({
           {subscriptionTier === 'PRO' ? 'Pro Tier' : 'Free Trial'}
         </span>
         
-        <div className="flex items-center gap-3 bg-emerald-950/30 border border-emerald-900/30 px-3 py-1.5 rounded-full">
+        <div className="flex items-center gap-3 bg-emerald-950/30 border border-emerald-900/30 px-3 py-1 rounded-full">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase font-mono hidden sm:inline-block">
+          <span className="text-[9px] font-bold text-emerald-500 tracking-widest uppercase font-mono hidden sm:inline-block">
             System Nominal
           </span>
         </div>

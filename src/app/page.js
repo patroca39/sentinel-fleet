@@ -26,7 +26,7 @@ export default async function FleetDashboard() {
     // Explicitly using !fk_driver_vehicle to resolve database ambiguity
     supabase.from('drivers').select('*, vehicle_specs!fk_driver_vehicle(*)').eq('operator_id', user.id),
     supabase.from('fuel_market_rates').select('*').order('effective_timestamp', { ascending: false }),
-    supabase.from('operator_profiles').select('subscription_tier').eq('id', user.id).single(),
+    supabase.from('operator_profiles').select('subscription_tier, allowed_fleet_size').eq('id', user.id).single(),
     supabase.from('fleet_anomalies').select('*').eq('operator_id', user.id).eq('is_resolved', false).order('created_at', { ascending: false })
   ]);
 
@@ -40,6 +40,7 @@ export default async function FleetDashboard() {
     const { data: fLogs } = await supabase
       .from('logs')
       .select('*')
+      .eq('operator_id', user.id)
       .in('driver_id', allRelevantDriverIds)
       .order('created_at', { ascending: false })
       .limit(100); 
@@ -53,6 +54,7 @@ export default async function FleetDashboard() {
     const { data: mLogs } = await supabase
       .from('maintenance_logs')
       .select('*, vehicle_specs!fk_maintenance_vehicle(model_name)')
+      .eq('operator_id', user.id)
       .in('vehicle_id', vehicleIds)
       .order('id', { ascending: false });
     maintenanceHistory = mLogs || [];
@@ -69,6 +71,7 @@ export default async function FleetDashboard() {
       initialMarketRates={marketRates || []}
       initialAnomalies={anomaliesData || []}
       initialSubscriptionTier={profile?.subscription_tier || 'FREE_TRIAL'}
+      initialAllowedFleetSize={profile?.allowed_fleet_size || null}
     />
   );
 }

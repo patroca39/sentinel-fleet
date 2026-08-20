@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
+import { createClient as createServerClient } from '@/utils/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request) {
   try {
     const { userId, isExpansion } = await request.json();
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    // 1. Authenticate the user session server-side
+    const userSupabase = await createServerClient();
+    const { data: { user }, error: authError } = await userSupabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized access. Session invalid.' }, { status: 401 });
+    }
+
+    // 2. Validate that the userId in the body matches the logged-in session user's ID
+    if (!userId || userId !== user.id) {
+      return NextResponse.json({ error: 'User ID mismatch / Spoofing detected' }, { status: 403 });
     }
 
     const supabase = createClient(
