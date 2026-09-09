@@ -105,7 +105,7 @@ export default function TutorialPage() {
 
           <ul className="list-disc list-outside ml-5 space-y-2 text-slate-400 text-sm">
             <li>Check the <strong>Live Activity Feed</strong> upon login for active red indicators.</li>
-            <li>Click on the specific driver's node to open their operational profile.</li>
+            <li>Click on the specific driver&apos;s node to open their operational profile.</li>
             <li>You can confront the driver regarding the anomaly. Once resolved, click <strong>Mark as Resolved</strong> to clear the alert from your primary feed.</li>
           </ul>
         </div>
@@ -114,7 +114,7 @@ export default function TutorialPage() {
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">3. Itemized Repair Tracking</h2>
             <p className="text-slate-400 leading-relaxed">
-              Sentinel Fleet uses Google's Gemini 3.6 Vision AI to automatically handle complex maintenance tracking, ensuring you never miss a PMS (Preventative Maintenance Schedule) interval.
+              Sentinel Fleet uses Google&apos;s Gemini 3.6 Vision AI to automatically handle complex maintenance tracking, ensuring you never miss a PMS (Preventative Maintenance Schedule) interval.
             </p>
           </div>
 

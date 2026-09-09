@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
         <div className="space-y-8 text-sm md:text-base leading-relaxed text-slate-400">
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-white">1. Introduction</h2>
-            <p>Sentinel Soft Solutions ("we," "our," or "us") respects your privacy and is committed to protecting it through our compliance with this policy. This policy applies to the SentinelFleet web dashboard and Telegram integration, in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173) of the Philippines.</p>
+            <p>Sentinel Soft Solutions (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) respects your privacy and is committed to protecting it through our compliance with this policy. This policy applies to the SentinelFleet web dashboard and Telegram integration, in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173) of the Philippines.</p>
           </section>
 
           <section className="space-y-4">

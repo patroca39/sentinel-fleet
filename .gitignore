@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+docs/.obsidian/
+.obsidian/
+repomix-output.xml
+repomix-output.txt

@@ -10,12 +10,12 @@ export default function UpgradeModal({
   showToast
 }) {
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
-  const [isExpanding, setIsExpanding] = useState(false);
-
-  useEffect(() => {
-    // Check if the user was intercepted while adding a new vehicle
-    setIsExpanding(!!localStorage.getItem('pending_expansion_vehicle'));
-  }, []);
+  const [isExpanding] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('pending_expansion_vehicle');
+    }
+    return false;
+  });
 
   const handleUpgradeClick = async () => {
     setIsProcessingCheckout(true);

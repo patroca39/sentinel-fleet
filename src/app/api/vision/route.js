@@ -28,6 +28,20 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
+    // Validate that the vehicle belongs to this operator (Strict Multi-Tenancy Rule)
+    if (vehicleId) {
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicle_specs')
+        .select('id')
+        .eq('id', Number(vehicleId))
+        .eq('operator_id', user.id)
+        .single();
+
+      if (vehicleError || !vehicle) {
+        return NextResponse.json({ error: 'Access denied: Vehicle does not belong to this operator.' }, { status: 403 });
+      }
+    }
+
     // 3. Construct the prompt
     const openAiPayload = {
       model: "gpt-4o",

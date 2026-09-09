@@ -63,7 +63,9 @@ export default function DashboardClient({
       const intendedPlan = localStorage.getItem('intended_plan');
       
       if (intendedPlan === 'pro') {
-        setShowUpgradeModal(true);
+        Promise.resolve().then(() => {
+          setShowUpgradeModal(true);
+        });
         localStorage.removeItem('intended_plan');
       }
     }
@@ -434,6 +436,16 @@ export default function DashboardClient({
               )}
 
             </div>
+            
+            {/* COMPLIANCE FOOTER */}
+            <footer className="mt-16 pt-8 pb-4 border-t border-slate-800/60 text-center text-xs text-slate-500 font-mono flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 opacity-60 hover:opacity-100 transition-opacity">
+              <span>&copy; {new Date().getFullYear()} SentinelFleet B2B</span>
+              <div className="flex gap-4">
+                <a href="/legal/privacy#dpa" className="hover:text-cyan-400 transition-colors">DPA / GDPR</a>
+                <a href="/legal/terms#sla" className="hover:text-cyan-400 transition-colors">SLA</a>
+                <a href="/legal/terms#aup" className="hover:text-cyan-400 transition-colors">Acceptable Use Policy (AUP)</a>
+              </div>
+            </footer>
           </main>
         </div>
 

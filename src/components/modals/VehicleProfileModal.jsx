@@ -86,7 +86,7 @@ export default function VehicleProfileModal({
                  <ShieldAlert className="w-6 h-6 text-rose-500 mt-1 flex-shrink-0 animate-pulse" />
                  <div className="flex-1">
                     <h4 className="font-bold text-rose-500 text-lg uppercase tracking-wide">Warning: Fuel Loss Detected</h4>
-                    <p className="text-sm text-rose-400/90 mt-1 font-mono">This vehicle's fuel efficiency dropped by <span className="font-black text-rose-400">{efficiencyDrop.toFixed(0)}%</span> vs its normal usage.</p>
+                    <p className="text-sm text-rose-400/90 mt-1 font-mono">This vehicle&apos;s fuel efficiency dropped by <span className="font-black text-rose-400">{efficiencyDrop.toFixed(0)}%</span> vs its normal usage.</p>
                  </div>
                  <div className="text-right pl-4 border-l border-rose-900/50">
                     <p className="text-[10px] text-rose-500/80 uppercase font-bold tracking-widest">Est. Money Lost</p>
@@ -148,7 +148,7 @@ export default function VehicleProfileModal({
                   <span className="text-sm font-mono">No driving data available for this unit yet.</span>
                   {driverId !== 'Unregistered' && dLogs.length === 0 && (
                     <span className="text-[10px] uppercase tracking-widest text-amber-500/80">
-                      Register driver in "Manage Drivers" to load history
+                      Register driver in &quot;Manage Drivers&quot; to load history
                     </span>
                   )}
                 </div>

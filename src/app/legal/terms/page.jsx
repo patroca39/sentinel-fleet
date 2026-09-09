@@ -18,7 +18,7 @@ export default function TermsOfService() {
         <div className="space-y-8 text-sm md:text-base leading-relaxed text-slate-400">
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-white">1. Acceptance of Terms</h2>
-            <p>By registering for and accessing the SentinelFleet Command Center (the "Service"), you agree to be bound by these Terms of Service. The Service is operated by Sentinel Soft Solutions, based in Tacloban City, Philippines.</p>
+            <p>By registering for and accessing the SentinelFleet Command Center (the &quot;Service&quot;), you agree to be bound by these Terms of Service. The Service is operated by Sentinel Soft Solutions, based in Tacloban City, Philippines.</p>
           </section>
 
           <section className="space-y-4">

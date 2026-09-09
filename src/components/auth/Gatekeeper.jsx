@@ -10,6 +10,7 @@ export default function Gatekeeper({ children, user, setSubscriptionTier }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [now] = useState(() => Date.now()); // FIX: Use stable state for Date.now() during render
   
   const supabase = createClient();
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function Gatekeeper({ children, user, setSubscriptionTier }) {
 
       if (paymentStatus === 'success') {
         let attempts = 0;
-        setLoading(true); 
+        // setLoading(true); // FIX: Removed to prevent synchronous setState inside useEffect on mount (starts as true anyway)
 
         const verifyPayment = async () => {
           attempts++;
@@ -127,7 +128,7 @@ export default function Gatekeeper({ children, user, setSubscriptionTier }) {
     : new Date(0);
     
   const daysLeft = profile?.created_at 
-    ? Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 3600 * 24)) 
+    ? Math.ceil((trialEnds.getTime() - now) / (1000 * 3600 * 24)) 
     : 0;
     
   const isExpired = !isPro && !isPending && (daysLeft <= 0);

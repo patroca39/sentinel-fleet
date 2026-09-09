@@ -79,9 +79,9 @@ export default function LandingPage() {
                 <BrainCircuit className={`w-4 h-4 text-purple-400 flex-shrink-0 ${phase === 'process' ? 'animate-pulse' : ''}`} />
               </div>
               <div className="space-y-1 font-mono text-[10px] sm:text-xs">
-                <p className="text-slate-300"><span className="text-purple-400">"odometer":</span> 45210,</p>
-                <p className="text-slate-300"><span className="text-purple-400">"parts_cost":</span> 2500.0,</p>
-                <p className="text-slate-300"><span className="text-purple-400">"labor_cost":</span> 1200.00</p>
+                <p className="text-slate-300"><span className="text-purple-400">&quot;odometer&quot;:</span> 45210,</p>
+                <p className="text-slate-300"><span className="text-purple-400">&quot;parts_cost&quot;:</span> 2500.0,</p>
+                <p className="text-slate-300"><span className="text-purple-400">&quot;labor_cost&quot;:</span> 1200.00</p>
               </div>
               {phase === 'resolve' && (
                 <div className="text-[8px] sm:text-[10px] text-emerald-400 pt-2 border-t border-slate-800 font-bold uppercase tracking-widest flex items-center gap-1 animate-in fade-in">
@@ -295,7 +295,7 @@ export default function LandingPage() {
                 Choose Your Deployment
               </h2>
               <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-                Start for free. Scale when you're ready.
+                Start for free. Scale when you&apos;re ready.
               </p>
             </div>
 

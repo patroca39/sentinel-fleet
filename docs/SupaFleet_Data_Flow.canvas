@@ -1,0 +1,15 @@
+{
+	"nodes":[
+		{"id":"a28e6f8dfae0df60","type":"text","text":"- **FastAPI (The Bouncer)**","x":-296,"y":-4,"width":250,"height":60},
+		{"id":"24bbfe9f90a58e44","type":"text","text":"Telegram (Driver Webhook)","x":-331,"y":-199,"width":250,"height":27},
+		{"id":"6bed5f7c0cb0fa49","type":"text","text":"- **OpenAI (Instructor Validation)**","x":40,"y":-64,"width":250,"height":60},
+		{"id":"e5ceb501e5d8ae6e","type":"text","text":"- **Supabase (PostgreSQL Ledger)**","x":-280,"y":180,"width":250,"height":60},
+		{"id":"f251755120eca8d0","x":-206,"y":-460,"width":400,"height":218,"type":"file","file":"Architecture_Playbook.md"}
+	],
+	"edges":[
+		{"id":"2e32ce96c684e61a","fromNode":"24bbfe9f90a58e44","fromSide":"bottom","toNode":"a28e6f8dfae0df60","toSide":"top","label":"POST /webhook (Encrypted)"},
+		{"id":"d2fa46391900d87a","fromNode":"a28e6f8dfae0df60","fromSide":"bottom","toNode":"e5ceb501e5d8ae6e","toSide":"top","label":"RPC Quota & Duplicate Check"},
+		{"id":"1da4c7b3efbb5746","fromNode":"a28e6f8dfae0df60","fromSide":"bottom","toNode":"6bed5f7c0cb0fa49","toSide":"top","label":"Extract & Validate Math"},
+		{"id":"f88fe43148780d01","fromNode":"6bed5f7c0cb0fa49","fromSide":"bottom","toNode":"e5ceb501e5d8ae6e","toSide":"top","label":"Insert to logs/maintenance_logs"}
+	]
+}

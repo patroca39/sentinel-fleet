@@ -74,7 +74,6 @@ export default function CpkAnalytics({
       totalConsumablesCost += Number(breakdown.consumables || 0);
     });
 
-    let totalDistance = 0;
     const vehicleStats = safeVehicles.map(vehicle => {
       const vFuel = safeFuel.filter(f => f.vehicle_id === vehicle.id || String(f.driver_id) === String(vehicle.assigned_driver_id));
       const vMaint = safeMaint.filter(m => m.vehicle_id === vehicle.id);
@@ -90,8 +89,6 @@ export default function CpkAnalytics({
       } else if (vehicle.current_odo) {
         vDistance = Math.max(0, vehicle.current_odo - 40000);
       }
-
-      totalDistance += vDistance;
 
       const vCpk = vDistance > 0 ? (vTotalCost / vDistance) : 0;
       const fuelCpk = vDistance > 0 ? (vFuelCost / vDistance) : 0;
@@ -110,6 +107,8 @@ export default function CpkAnalytics({
         maintCpk
       };
     });
+
+    const totalDistance = vehicleStats.reduce((sum, item) => sum + item.distance, 0);
 
     const grandTotalSpend = totalFuelSpend + totalMaintSpend;
     const overallCpk = totalDistance > 0 ? (grandTotalSpend / totalDistance) : 0;
@@ -143,18 +142,20 @@ export default function CpkAnalytics({
   const monthlyTrendData = useMemo(() => {
     const months = [];
     const now = new Date();
+    const safeFuel = Array.isArray(fuelLogs) ? fuelLogs : [];
+    const safeMaint = Array.isArray(maintenanceHistory) ? maintenanceHistory : [];
 
     for (let i = 5; i >= 0; i--) {
       const monthStart = startOfMonth(subMonths(now, i));
       const monthEnd = endOfMonth(subMonths(now, i));
       const monthLabel = format(monthStart, 'MMM yyyy');
 
-      const mFuel = fuelLogs.filter(f => {
+      const mFuel = safeFuel.filter(f => {
         const d = new Date(f.created_at);
         return d >= monthStart && d <= monthEnd;
       });
 
-      const mMaint = maintenanceHistory.filter(m => {
+      const mMaint = safeMaint.filter(m => {
         const d = new Date(m.service_date || m.created_at);
         return d >= monthStart && d <= monthEnd;
       });

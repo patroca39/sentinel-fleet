@@ -57,7 +57,7 @@ export default function AuthModal({
             </div>
             <h3 className="text-xl font-bold text-slate-100">Check Your Inbox</h3>
             <p className="text-sm text-slate-400 leading-relaxed">
-              We've sent a secure verification link to <span className="text-cyan-400 font-mono">{authForm.email}</span>. 
+              We&apos;ve sent a secure verification link to <span className="text-cyan-400 font-mono">{authForm.email}</span>. 
             </p>
             <p className="text-sm text-slate-400 leading-relaxed">
               Please click that link to activate your TNVS operator account and access the logistics platform.

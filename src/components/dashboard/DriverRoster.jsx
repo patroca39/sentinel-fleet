@@ -91,7 +91,7 @@ export default function DriverRoster({
                 </tr>
               ))}
               {drivers.length === 0 && (
-                <tr><td colSpan="3" className="text-center py-8 text-slate-600">You haven't added any drivers yet.</td></tr>
+                <tr><td colSpan="3" className="text-center py-8 text-slate-600">You haven&apos;t added any drivers yet.</td></tr>
               )}
             </tbody>
           </table>
