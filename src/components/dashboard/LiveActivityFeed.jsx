@@ -193,7 +193,7 @@ export default function LiveActivityFeed({
             </div>
 
             {viewMode === 'grid' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr">
+              <div className="grid grid-cols-1 gap-y-6 border-b border-border py-4 phone:grid-cols-2 laptop:grid-cols-4">
                 {safeProcessedFleet.map((driver, idx) => {
                   const v = driver.vehicle_specs || {};
                   const latestOdo = driver.latestOdo || 0;
@@ -214,7 +214,7 @@ export default function LiveActivityFeed({
                   }
 
                   // Asymmetrical Bento sizing
-                  const colSpan = (idx === 0 || idx === 3) ? "sm:col-span-2 lg:col-span-2 xl:col-span-2" : "col-span-1";
+                  const colSpan = (idx === 0 || idx === 3) ? "phone:col-span-2 laptop:col-span-2" : "col-span-1";
 
                   return (
                     <motion.div 
@@ -229,8 +229,8 @@ export default function LiveActivityFeed({
                       `}
                       onClick={(e) => handleCardClick(e, driver)} 
                     >
-                      <CardHeader className="pb-4 pt-6">
-                        <div className="flex justify-between items-start">
+                      <CardHeader className="p-6 md:p-8 pb-4">
+                        <div className="flex justify-between items-start gap-3">
                           <div className="space-y-1">
                             <CardTitle className="text-slate-100 text-base font-bold flex items-center gap-1.5 tracking-tight">
                               <User className="w-3.5 h-3.5 text-slate-500" />
@@ -246,9 +246,9 @@ export default function LiveActivityFeed({
                         </div>
                       </CardHeader>
 
-                      <CardContent className="space-y-4 pb-6">
+                      <CardContent className="space-y-4 p-6 md:p-8 pt-0 pb-6 md:pb-8">
                         <div className="bg-slate-950/50 p-3.5 rounded-lg border border-slate-800/40">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Assigned Vehicle</p>
+                          <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Assigned Vehicle</p>
                           <p className="text-sm font-semibold text-slate-200 truncate flex items-center gap-1.5 tracking-tight">
                             <Car className="w-4 h-4 text-slate-400" />
                             {v.model_name || 'Unassigned Vehicle'}
@@ -256,17 +256,17 @@ export default function LiveActivityFeed({
                         </div>
                         
                         <div className="flex justify-between items-center py-1">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Odometer</span>
-                          <span className="font-bold text-slate-200 font-mono text-base flex items-center gap-1">
-                            {latestOdo.toLocaleString()} <span className="text-slate-600 text-xs">km</span>
+                          <span className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Odometer</span>
+                          <span className="text-xl font-medium text-foreground flex items-center gap-1">
+                            {latestOdo.toLocaleString()} <span className="text-muted-foreground text-sm">km</span>
                           </span>
                         </div>
 
                         {/* PMS HEALTH BAR */}
                         <div className="space-y-1.5 pt-2">
-                          <div className="flex justify-between items-center text-[9px] uppercase tracking-wider font-bold">
-                            <span className="text-slate-500">PMS Remaining</span>
-                            <span className={driver.isFraudulent ? 'text-rose-400' : isHealthy ? 'text-slate-400' : 'text-amber-400'}>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground text-xs uppercase tracking-wider mb-1">PMS Remaining</span>
+                            <span className={`text-sm font-medium ${driver.isFraudulent ? 'text-rose-400' : isHealthy ? 'text-muted-foreground' : 'text-amber-400'}`}>
                               {distanceToPms > 0 ? `${distanceToPms.toLocaleString()} km` : 'OVERDUE'}
                             </span>
                           </div>

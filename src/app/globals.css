@@ -5,6 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  /* Custom responsive breakpoints */
+  --breakpoint-phone: 480px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-laptop: 1024px;
+  --breakpoint-desktop: 1280px;
+
   /* Cool, blue-tinted greys for the enterprise background */
   --color-slate-50: #f8fafc;
   --color-slate-800: #334155;

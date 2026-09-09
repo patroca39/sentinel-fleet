@@ -349,7 +349,7 @@ export default function DashboardClient({
 
   return (
     <Gatekeeper user={session.user} setSubscriptionTier={setSubscriptionTier} setAllowedFleetSize={setAllowedFleetSize}>
-      <div className="min-h-screen bg-slate-950 flex font-sans overflow-hidden text-slate-300 relative">
+      <div className="min-h-screen bg-background flex font-sans antialiased overflow-hidden text-foreground relative">
         <Sidebar 
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
@@ -366,7 +366,7 @@ export default function DashboardClient({
           />
           
           <main className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
-            <div className="max-w-7xl mx-auto space-y-8">
+            <div className="max-w-8xl mx-auto w-full px-6 tablet:px-10 desktop:px-14 space-y-8">
               
               {activeTab === 'dashboard' && (
                 <LiveActivityFeed 
