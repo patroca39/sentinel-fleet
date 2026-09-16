@@ -56,3 +56,153 @@ def consume_quota(operator_id: str) -> bool:
     except Exception as e:
         print(f"Error checking/consuming quota: {e}")
     return False
+
+def insert_fuel_receipt(driver_data: dict, data, receipt_id: str):
+    """
+    Inserts a fuel receipt log into the Supabase 'logs' table.
+    """
+    supabase = get_supabase()
+    
+    # Resolve vehicle details if assigned_vehicle_id exists
+    vehicle_name = "Unknown Vehicle"
+    if driver_data.get("assigned_vehicle_id"):
+        try:
+            vehicle_resp = supabase.table("vehicle_specs").select("model_name, plate_number").eq("id", driver_data["assigned_vehicle_id"]).execute()
+            if vehicle_resp.data:
+                v = vehicle_resp.data[0]
+                vehicle_name = f"{v.get('model_name', '')} ({v.get('plate_number', '')})".strip()
+        except Exception as e:
+            print(f"Error fetching vehicle details: {e}")
+            
+    payload = {
+        "operator_id": driver_data.get("operator_id"),
+        "driver_id": str(driver_data.get("telegram_id")),
+        "driver_name": driver_data.get("driver_name"),
+        "vehicle": vehicle_name,
+        "fuel_liters": data.liters_filled,
+        "cost": data.total_amount,
+        "odometer": data.odometer_reading,
+        "receipt_id": receipt_id,
+        "status": "pending_verification"
+    }
+    
+    try:
+        response = supabase.table("logs").insert(payload).execute()
+        return response.data
+    except Exception as e:
+        print(f"Error inserting fuel receipt: {e}")
+        # Robust fallback: if 'status' column doesn't exist, insert without status
+        if "status" in str(e).lower() or "column" in str(e).lower():
+            payload_fallback = payload.copy()
+            payload_fallback.pop("status", None)
+            try:
+                response = supabase.table("logs").insert(payload_fallback).execute()
+                return response.data
+            except Exception as e2:
+                print(f"Fallback fuel insert failed: {e2}")
+        raise e
+
+def insert_maintenance_receipt(driver_data: dict, data, receipt_id: str):
+    """
+    Inserts a maintenance receipt log into the Supabase 'maintenance_logs' table.
+    """
+    supabase = get_supabase()
+    
+    payload = {
+        "operator_id": driver_data.get("operator_id"),
+        "driver_id": driver_data.get("id"),  # Int ID
+        "vehicle_id": driver_data.get("assigned_vehicle_id"),
+        "service_date": data.date,
+        "shop_name": data.vendor_name,
+        "odometer_at_service": data.odometer_reading,
+        "total_cost": data.total_amount,
+        "services_performed": data.service_description,
+        "receipt_id": receipt_id,
+        "status": "pending_verification"
+    }
+    
+    try:
+        response = supabase.table("maintenance_logs").insert(payload).execute()
+        return response.data
+    except Exception as e:
+        print(f"Error inserting maintenance receipt: {e}")
+        # Robust fallback if 'status' column doesn't exist
+        if "status" in str(e).lower() or "column" in str(e).lower():
+            payload_fallback = payload.copy()
+            payload_fallback.pop("status", None)
+            try:
+                response = supabase.table("maintenance_logs").insert(payload_fallback).execute()
+                return response.data
+            except Exception as e2:
+                print(f"Fallback maintenance insert failed: {e2}")
+        raise e
+
+def update_receipt_status(receipt_id: str, status: str) -> bool:
+    """
+    Update the status of a receipt in either logs or maintenance_logs.
+    """
+    try:
+        supabase = get_supabase()
+        # Try updating logs table first
+        resp_logs = supabase.table("logs").update({"status": status}).eq("receipt_id", receipt_id).execute()
+        # Also try updating maintenance_logs table
+        resp_maint = supabase.table("maintenance_logs").update({"status": status}).eq("receipt_id", receipt_id).execute()
+        
+        updated_logs = resp_logs.data if resp_logs else []
+        updated_maint = resp_maint.data if resp_maint else []
+        return bool((updated_logs and len(updated_logs) > 0) or (updated_maint and len(updated_maint) > 0))
+    except Exception as e:
+        print(f"Error updating receipt status: {e}")
+        return False
+
+def get_latest_pending_receipt_id(chat_id: str) -> str | None:
+    """
+    Finds the latest pending verification receipt_id for a given driver chat_id.
+    Looks in both 'logs' and 'maintenance_logs' tables.
+    """
+    try:
+        supabase = get_supabase()
+        driver = get_active_driver(chat_id)
+        
+        latest_fuel_id = None
+        latest_fuel_time = None
+        latest_maint_id = None
+        latest_maint_time = None
+        
+        # 1. Check fuel logs (logs table uses telegram_id as driver_id string)
+        try:
+            fuel_resp = supabase.table("logs").select("receipt_id, created_at").eq("driver_id", str(chat_id)).eq("status", "pending_verification").order("created_at", desc=True).limit(1).execute()
+        except Exception:
+            # Fallback: query without status filter
+            fuel_resp = supabase.table("logs").select("receipt_id, created_at").eq("driver_id", str(chat_id)).order("created_at", desc=True).limit(1).execute()
+            
+        if fuel_resp.data:
+            latest_fuel_id = fuel_resp.data[0].get("receipt_id")
+            latest_fuel_time = fuel_resp.data[0].get("created_at")
+            
+        # 2. Check maintenance logs (uses integer driver_id)
+        if driver:
+            try:
+                maint_resp = supabase.table("maintenance_logs").select("receipt_id, created_at").eq("driver_id", driver["id"]).eq("status", "pending_verification").order("created_at", desc=True).limit(1).execute()
+            except Exception:
+                # Fallback: query without status filter
+                maint_resp = supabase.table("maintenance_logs").select("receipt_id, created_at").eq("driver_id", driver["id"]).order("created_at", desc=True).limit(1).execute()
+                
+            if maint_resp.data:
+                latest_maint_id = maint_resp.data[0].get("receipt_id")
+                latest_maint_time = maint_resp.data[0].get("created_at")
+                
+        # Compare times and return the most recent receipt_id
+        if latest_fuel_id and latest_maint_id:
+            if latest_fuel_time >= latest_maint_time:
+                return latest_fuel_id
+            else:
+                return latest_maint_id
+        elif latest_fuel_id:
+            return latest_fuel_id
+        elif latest_maint_id:
+            return latest_maint_id
+            
+    except Exception as e:
+        print(f"Error getting latest pending receipt: {e}")
+    return None

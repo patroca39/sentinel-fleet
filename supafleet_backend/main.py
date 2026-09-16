@@ -10,7 +10,14 @@ from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv
 
 # Ensure these match the functions exported in your database.py
-from database import get_active_driver, consume_quota
+from database import (
+    get_active_driver,
+    consume_quota,
+    insert_fuel_receipt,
+    insert_maintenance_receipt,
+    update_receipt_status,
+    get_latest_pending_receipt_id
+)
 
 load_dotenv()
 
@@ -38,6 +45,7 @@ class FuelReceiptExtraction(BaseModel):
     total_amount: float
     liters_filled: float
     date: str
+    odometer_reading: int = Field(description="The vehicle's dashboard mileage. Return 0 if not visible or illegible.")
 
 class MaintenanceReceiptExtraction(BaseModel):
     reasoning_log: str = Field(description="Hidden compute space to verify totals and math before extracting.")
@@ -45,6 +53,7 @@ class MaintenanceReceiptExtraction(BaseModel):
     total_amount: float
     service_description: str
     date: str
+    odometer_reading: int = Field(description="The vehicle's dashboard mileage. Return 0 if not visible or illegible.")
 
 # --- Frictionless Async Worker ---
 async def process_telegram_webhook_background(driver_data: dict, file_id: str, chat_id: str):
@@ -78,6 +87,8 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
 
         # 3. Dense OCR Extraction (Native Structured Outputs via completions.parse)
         msg_text = ""
+        is_valid_type = False
+        
         if "fuel" in receipt_type:
             extraction = raw_client.beta.chat.completions.parse(
                 model="gpt-4o",
@@ -86,15 +97,18 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "Extract the exact details from this fuel receipt."},
+                            {"type": "text", "text": "You are analyzing a fleet receipt for RozenPasque operating in Region 8, Philippines. Extract the exact details. Look carefully for the odometer reading (usually photographed against the vehicle dashboard). If any number is illegible, return 0 rather than guessing. Do not hallucinate data."},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                         ]
                     }
                 ]
             )
             data = extraction.choices[0].message.parsed
-            msg_text = f"✅ *Fuel Receipt Logged*\nVendor: {data.vendor_name}\nAmount: ₱{data.total_amount}\nLiters: {data.liters_filled}L\nDate: {data.date}"
-            # TODO: Call your Supabase insertion RPC here
+            msg_text = f"✅ *Fuel Receipt Logged*\nVendor: {data.vendor_name}\nAmount: ₱{data.total_amount}\nLiters: {data.liters_filled}L\nDate: {data.date}\nOdometer: {data.odometer_reading} km"
+            is_valid_type = True
+            
+            # Call your Supabase insertion here
+            insert_fuel_receipt(driver_data, data, file_id)
             
         elif "maintenance" in receipt_type:
             extraction = raw_client.beta.chat.completions.parse(
@@ -104,24 +118,50 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "Extract the exact details from this maintenance receipt."},
+                            {"type": "text", "text": "You are analyzing a fleet receipt for RozenPasque operating in Region 8, Philippines. Extract the exact details. Look carefully for the odometer reading (usually photographed against the vehicle dashboard). If any number is illegible, return 0 rather than guessing. Do not hallucinate data."},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                         ]
                     }
                 ]
             )
             data = extraction.choices[0].message.parsed
-            msg_text = f"🔧 *Maintenance Logged*\nVendor: {data.vendor_name}\nAmount: ₱{data.total_amount}\nService: {data.service_description}\nDate: {data.date}"
-            # TODO: Call your Supabase insertion RPC here
+            msg_text = f"🔧 *Maintenance Logged*\nVendor: {data.vendor_name}\nAmount: ₱{data.total_amount}\nService: {data.service_description}\nDate: {data.date}\nOdometer: {data.odometer_reading} km"
+            is_valid_type = True
+            
+            # Call your Supabase insertion here
+            insert_maintenance_receipt(driver_data, data, file_id)
             
         else:
             msg_text = "⚠️ Could not clearly identify this as a fuel or maintenance receipt. Please ensure the photo is clear."
 
         # 4. Dispatch the extracted data back to the driver
+        payload = {
+            "chat_id": chat_id,
+            "text": msg_text,
+            "parse_mode": "Markdown"
+        }
+        
+        # Append inline keyboard if it's a valid parsed receipt type
+        if is_valid_type:
+            payload["reply_markup"] = {
+                "inline_keyboard": [
+                    [
+                        {"text": "✅ Confirm & Lock Data", "callback_data": "verify_confirm"}
+                    ],
+                    [
+                        {"text": "🔄 Redo AI Analysis", "callback_data": "verify_redo"}
+                    ],
+                    [
+                        {"text": "📸 Retake Odometer", "callback_data": "verify_retake_odo"},
+                        {"text": "🧾 Retake Receipt", "callback_data": "verify_retake_rcpt"}
+                    ]
+                ]
+            }
+
         async with httpx.AsyncClient() as http:
             await http.post(
                 f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-                json={"chat_id": chat_id, "text": msg_text, "parse_mode": "Markdown"}
+                json=payload
             )
 
     except Exception as e:
@@ -138,6 +178,59 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
 @limiter.limit("5/minute") # Anti-Spam Burst Limiter
 async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
     payload = await request.json()
+    
+    # Handle Telegram callback_query payloads natively
+    if "callback_query" in payload:
+        callback_query = payload["callback_query"]
+        callback_data = callback_query.get("data")
+        query_id = callback_query.get("id")
+        chat_id = str(callback_query.get("message", {}).get("chat", {}).get("id"))
+        message_id = callback_query.get("message", {}).get("message_id")
+        
+        # Acknowledge the callback immediately to stop the loading spinner
+        async with httpx.AsyncClient() as http:
+            await http.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/answerCallbackQuery",
+                json={"callback_query_id": query_id}
+            )
+            
+        # Route the logic
+        if callback_data == "verify_confirm":
+            receipt_id = get_latest_pending_receipt_id(chat_id)
+            if receipt_id:
+                update_receipt_status(receipt_id, "verified")
+            
+            async with httpx.AsyncClient() as http:
+                await http.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/editMessageText",
+                    json={
+                        "chat_id": chat_id,
+                        "message_id": message_id,
+                        "text": "✅ Data Locked."
+                    }
+                )
+        elif callback_data in ["verify_retake_odo", "verify_retake_rcpt"]:
+            msg = "📸 Please upload a clear photo of your Odometer." if callback_data == "verify_retake_odo" else "🧾 Please upload a clear photo of your Receipt."
+            async with httpx.AsyncClient() as http:
+                await http.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={
+                        "chat_id": chat_id,
+                        "text": msg
+                    }
+                )
+        elif callback_data == "verify_redo":
+            async with httpx.AsyncClient() as http:
+                await http.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={
+                        "chat_id": chat_id,
+                        "text": "🔄 Please upload the receipt photo again to re-trigger the AI Analysis."
+                    }
+                )
+                
+        return {"status": "callback_processed"}
+
     message = payload.get("message", {})
     chat_id = str(message.get("chat", {}).get("id"))
     
