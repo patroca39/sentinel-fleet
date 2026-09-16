@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
+import { FleetCpkGauge } from './FleetCpkGauge';
+import { FuelEfficiencyLine } from './FuelEfficiencyLine';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -180,6 +182,20 @@ export default function CpkAnalytics({
     return months;
   }, [fuelLogs, maintenanceHistory]);
 
+  const calculatedScore = cpkMetrics.overallCpk > 0
+    ? Math.max(15, Math.min(98, Math.round(120 - (cpkMetrics.overallCpk * 10))))
+    : 85;
+
+  const fuelEfficiencyData = useMemo(() => {
+    const safeLogs = Array.isArray(fuelLogs) ? fuelLogs : [];
+    const sortedLogs = [...safeLogs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const recentLogs = sortedLogs.slice(-15);
+    return recentLogs.map((log, idx) => ({
+      date: log.created_at ? format(new Date(log.created_at), 'MMM dd') : `L${idx}`,
+      efficiency: log.efficiency ? Number(log.efficiency) : 8.5
+    }));
+  }, [fuelLogs]);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
@@ -262,6 +278,25 @@ export default function CpkAnalytics({
           <p className="text-xs text-slate-500 font-mono mt-3">
             Across {vehicles.length} active registered unit{vehicles.length !== 1 ? 's' : ''}
           </p>
+        </div>
+      </div>
+
+      {/* Enterprise VisActor Analytics Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl lg:col-span-1">
+          <h4 className="font-bold text-slate-200 text-sm uppercase tracking-widest flex items-center gap-2 mb-1">
+            <Activity className="w-4 h-4 text-emerald-400" /> Fleet CPK Index Score
+          </h4>
+          <p className="text-xs text-slate-500 font-mono mb-4">Real-time overall performance index</p>
+          <FleetCpkGauge score={calculatedScore} />
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl lg:col-span-2">
+          <h4 className="font-bold text-slate-200 text-sm uppercase tracking-widest flex items-center gap-2 mb-1">
+            <TrendingUp className="w-4 h-4 text-cyan-400" /> Fuel Efficiency Trend
+          </h4>
+          <p className="text-xs text-slate-500 font-mono mb-4">Historical progression of km/L averages</p>
+          <FuelEfficiencyLine data={fuelEfficiencyData} />
         </div>
       </div>
 

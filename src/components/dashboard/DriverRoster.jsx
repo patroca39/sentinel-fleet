@@ -13,6 +13,9 @@ export default function DriverRoster({
   handleReassignNode,
   setRevokeModal
 }) {
+  const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+  const safeDrivers = Array.isArray(drivers) ? drivers : [];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-xl p-8 lg:col-span-1 h-fit">
@@ -36,7 +39,7 @@ export default function DriverRoster({
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assign Vehicle</label>
             <select required value={newDriver.vehicleId} onChange={e => setNewDriver({ ...newDriver, vehicleId: e.target.value })} className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-lg focus:border-cyan-500 font-mono text-sm outline-none text-slate-400 transition-colors">
               <option value="">Select a vehicle from your fleet...</option>
-              {vehicles.map(v => <option key={v.id} value={v.id}>{v.model_name}</option>)}
+              {safeVehicles.map(v => <option key={v.id} value={v.id}>{v.model_name}</option>)}
             </select>
           </div>
           <div className="pt-4">
@@ -64,7 +67,7 @@ export default function DriverRoster({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
-              {drivers.map(driver => (
+              {safeDrivers.map(driver => (
                 <tr key={driver.id} className="hover:bg-slate-800/30 transition-colors group">
                   <td className="px-6 py-4">
                     <p className="font-bold text-slate-200 text-sm">{driver.driver_name}</p>
@@ -77,7 +80,7 @@ export default function DriverRoster({
                       className="bg-slate-950 border border-slate-800 rounded p-2 text-xs text-cyan-400 font-bold outline-none focus:border-cyan-500 transition-colors w-full max-w-[200px]"
                     >
                       <option value="">No Vehicle Assigned</option>
-                      {vehicles.map(v => <option key={v.id} value={v.id}>{v.model_name}</option>)}
+                      {safeVehicles.map(v => <option key={v.id} value={v.id}>{v.model_name}</option>)}
                     </select>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -90,7 +93,7 @@ export default function DriverRoster({
                   </td>
                 </tr>
               ))}
-              {drivers.length === 0 && (
+              {safeDrivers.length === 0 && (
                 <tr><td colSpan="3" className="text-center py-8 text-slate-600">You haven&apos;t added any drivers yet.</td></tr>
               )}
             </tbody>

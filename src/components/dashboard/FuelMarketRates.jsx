@@ -17,10 +17,17 @@ export default function FuelMarketRates({
   uniqueVaultDrivers = [],
   filteredFuelLogs = []
 }) {
-  const activeDiesel = marketRates.find(r => r.fuel_type === 'Diesel');
-  const activeGasoline = marketRates.find(r => r.fuel_type === 'Gasoline');
+  const safeMarketRates = Array.isArray(marketRates) ? marketRates : [];
+  const safeFuelLogs = Array.isArray(fuelLogs) ? fuelLogs : [];
+  const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+  const safeDrivers = Array.isArray(drivers) ? drivers : [];
+  const safeUniqueVaultDrivers = Array.isArray(uniqueVaultDrivers) ? uniqueVaultDrivers : [];
+  const safeFilteredFuelLogs = Array.isArray(filteredFuelLogs) ? filteredFuelLogs : [];
 
-  const displayLogs = filteredFuelLogs.length > 0 ? filteredFuelLogs : fuelLogs;
+  const activeDiesel = safeMarketRates.find(r => r.fuel_type === 'Diesel');
+  const activeGasoline = safeMarketRates.find(r => r.fuel_type === 'Gasoline');
+
+  const displayLogs = safeFilteredFuelLogs.length > 0 ? safeFilteredFuelLogs : safeFuelLogs;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -47,13 +54,9 @@ export default function FuelMarketRates({
                 ₱{activeDiesel ? Number(activeDiesel.price_per_liter).toFixed(2) : '79.00'}
                 <span className="text-slate-600 text-sm font-sans font-normal ml-2">/ L</span>
               </p>
-              <p className="text-xs text-slate-500 font-mono mt-3">
-                Effective: {activeDiesel?.effective_timestamp ? format(new Date(activeDiesel.effective_timestamp), 'MMM dd, yyyy') : 'Jul 21, 2026'}
-              </p>
+              <p className="text-xs text-slate-500 font-mono mt-3">Dynamic Rate Tracked</p>
             </div>
-            <div className="p-4 bg-amber-950/30 border border-amber-900/40 rounded-xl text-amber-400 font-mono text-sm font-bold">
-              EN590
-            </div>
+            <Droplet className="w-12 h-12 text-slate-800 opacity-50 stroke-1" />
           </div>
 
           <div className="bg-slate-950 border border-slate-800/80 p-8 rounded-xl flex justify-between items-center relative overflow-hidden">
@@ -61,22 +64,46 @@ export default function FuelMarketRates({
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Current Gasoline Price</p>
               <p className="text-4xl font-black text-cyan-400 font-mono mt-2">
-                ₱{activeGasoline ? Number(activeGasoline.price_per_liter).toFixed(2) : '74.00'}
+                ₱{activeGasoline ? Number(activeGasoline.price_per_liter).toFixed(2) : '84.50'}
                 <span className="text-slate-600 text-sm font-sans font-normal ml-2">/ L</span>
               </p>
-              <p className="text-xs text-slate-500 font-mono mt-3">
-                Effective: {activeGasoline?.effective_timestamp ? format(new Date(activeGasoline.effective_timestamp), 'MMM dd, yyyy') : 'Jul 21, 2026'}
-              </p>
+              <p className="text-xs text-slate-500 font-mono mt-3">Dynamic Rate Tracked</p>
             </div>
-            <div className="p-4 bg-cyan-950/30 border border-cyan-900/40 rounded-xl text-cyan-400 font-mono text-sm font-bold">
-              RON95
-            </div>
+            <Droplet className="w-12 h-12 text-slate-800 opacity-50 stroke-1" />
           </div>
         </div>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-        <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+          <div>
+            <h3 className="font-bold text-slate-100 text-lg">Telemetry Ingestion Engine</h3>
+            <p className="text-xs text-slate-500 font-mono mt-1">Audit Trail & Digital Receipts</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-slate-400 w-full md:w-auto">
+              <Calendar className="w-4 h-4 text-cyan-500" />
+              <select value={ingestionDate} onChange={e => setIngestionDate(e.target.value)} className="bg-transparent border-none outline-none font-mono text-xs w-full">
+                <option value="all">All Days (30 Days)</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="week">Past Week</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-slate-400 w-full md:w-auto">
+              <Users className="w-4 h-4 text-cyan-500" />
+              <select value={ingestionDriver} onChange={e => setIngestionDriver(e.target.value)} className="bg-transparent border-none outline-none font-mono text-xs w-full">
+                <option value="all">All Fleet Drivers</option>
+                {safeUniqueVaultDrivers.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-b border-slate-800 bg-slate-900/50">
           <h3 className="font-bold text-slate-200 text-sm uppercase tracking-widest flex items-center gap-2">
             <Filter className="w-4 h-4 text-cyan-500" /> Fuel Activity Logs
           </h3>
@@ -105,13 +132,10 @@ export default function FuelMarketRates({
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {displayLogs.map((log, idx) => {
-                  // Resolve the vehicle associated with this log
-                  // First, try matching directly via log.vehicle (if present as a model_name string)
-                  // Otherwise, find the driver matching the log.driver_id and locate their assigned vehicle
-                  const matchingDriver = (drivers || []).find(d => String(d.telegram_id) === String(log.driver_id));
+                  const matchingDriver = safeDrivers.find(d => String(d.telegram_id) === String(log.driver_id));
                   const matchingVehicle = log.vehicle 
                     ? { model_name: log.vehicle } 
-                    : (vehicles.find(v => v.id === log.vehicle_id) || matchingDriver?.vehicle_specs || vehicles.find(v => v.id === matchingDriver?.assigned_vehicle_id));
+                    : (safeVehicles.find(v => v.id === log.vehicle_id) || matchingDriver?.vehicle_specs || safeVehicles.find(v => v.id === matchingDriver?.assigned_vehicle_id));
 
                   return (
                     <tr key={log.id || idx} className="hover:bg-slate-800/50">
