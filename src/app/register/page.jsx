@@ -145,7 +145,7 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-[#020617] flex flex-col justify-center items-center p-4 py-12 selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 py-12 selection:bg-cyan-500/30">
       <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium z-10">
         <ArrowLeft className="w-4 h-4" /> Back to Home
       </Link>

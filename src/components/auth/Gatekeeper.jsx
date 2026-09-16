@@ -159,7 +159,7 @@ export default function Gatekeeper({ children, user, setSubscriptionTier }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-4 relative selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative selection:bg-cyan-500/30">
       <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
          <Lock className="w-96 h-96" />
       </div>
