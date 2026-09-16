@@ -87,7 +87,7 @@ def insert_fuel_receipt(driver_data: dict, data, receipt_id: str):
     }
     
     try:
-        response = supabase.table("logs").insert(payload).execute()
+        response = supabase.table("logs").upsert(payload, on_conflict="receipt_id").execute()
         return response.data
     except Exception as e:
         print(f"Error inserting fuel receipt: {e}")
@@ -96,7 +96,7 @@ def insert_fuel_receipt(driver_data: dict, data, receipt_id: str):
             payload_fallback = payload.copy()
             payload_fallback.pop("status", None)
             try:
-                response = supabase.table("logs").insert(payload_fallback).execute()
+                response = supabase.table("logs").upsert(payload_fallback, on_conflict="receipt_id").execute()
                 return response.data
             except Exception as e2:
                 print(f"Fallback fuel insert failed: {e2}")
@@ -122,7 +122,7 @@ def insert_maintenance_receipt(driver_data: dict, data, receipt_id: str):
     }
     
     try:
-        response = supabase.table("maintenance_logs").insert(payload).execute()
+        response = supabase.table("maintenance_logs").upsert(payload, on_conflict="receipt_id").execute()
         return response.data
     except Exception as e:
         print(f"Error inserting maintenance receipt: {e}")
@@ -131,7 +131,7 @@ def insert_maintenance_receipt(driver_data: dict, data, receipt_id: str):
             payload_fallback = payload.copy()
             payload_fallback.pop("status", None)
             try:
-                response = supabase.table("maintenance_logs").insert(payload_fallback).execute()
+                response = supabase.table("maintenance_logs").upsert(payload_fallback, on_conflict="receipt_id").execute()
                 return response.data
             except Exception as e2:
                 print(f"Fallback maintenance insert failed: {e2}")
