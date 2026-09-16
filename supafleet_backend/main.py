@@ -38,7 +38,7 @@ def verify_telegram_secret(x_telegram_bot_api_secret_token: str = Header(None)):
     if x_telegram_bot_api_secret_token != TELEGRAM_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-# --- Pydantic Schemas (Playbook: Hidden Reasoning Log) ---
+# --- Pydantic Schemas ---
 class FuelReceiptExtraction(BaseModel):
     reasoning_log: str = Field(description="Hidden compute space to verify totals and math before extracting.")
     vendor_name: str
@@ -57,11 +57,9 @@ class MaintenanceReceiptExtraction(BaseModel):
 
 # --- Frictionless Async Worker ---
 async def process_telegram_webhook_background(driver_data: dict, file_id: str, chat_id: str):
-    """
-    Executes heavy image extraction asynchronously so Telegram never hangs.
-    """
+    """Executes heavy image extraction asynchronously so Telegram never hangs."""
     try:
-        # 1. Download Image from Telegram API
+        # 1. Download Image
         async with httpx.AsyncClient() as http:
             file_info = await http.get(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getFile?file_id={file_id}")
             file_path = file_info.json()["result"]["file_path"]
@@ -69,7 +67,7 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
             img_resp = await http.get(f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}")
             base64_image = base64.b64encode(img_resp.content).decode("utf-8")
 
-        # 2. Dual-Engine Fast Classification (Standard completions.create)
+        # 2. Fast Classification
         classification_resp = raw_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -85,7 +83,7 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
         )
         receipt_type = classification_resp.choices[0].message.content.strip().lower()
 
-        # 3. Dense OCR Extraction (Native Structured Outputs via completions.parse)
+        # 3. Dense OCR Extraction
         msg_text = ""
         is_valid_type = False
         
@@ -104,10 +102,8 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
                 ]
             )
             data = extraction.choices[0].message.parsed
-            msg_text = f"✅ *Fuel Receipt Logged*\nVendor: {data.vendor_name}\nAmount: ₱{data.total_amount}\nLiters: {data.liters_filled}L\nDate: {data.date}\nOdometer: {data.odometer_reading} km"
+            msg_text = f"✅ *Fuel Receipt Logged (Pending)*\nVendor: {data.vendor_name}\nAmount: ₱{data.total_amount}\nLiters: {data.liters_filled}L\nDate: {data.date}\nOdometer: {data.odometer_reading} km"
             is_valid_type = True
-            
-            # Call your Supabase insertion here
             insert_fuel_receipt(driver_data, data, file_id)
             
         elif "maintenance" in receipt_type:
@@ -125,32 +121,25 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
                 ]
             )
             data = extraction.choices[0].message.parsed
-            msg_text = f"🔧 *Maintenance Logged*\nVendor: {data.vendor_name}\nAmount: ₱{data.total_amount}\nService: {data.service_description}\nDate: {data.date}\nOdometer: {data.odometer_reading} km"
+            msg_text = f"🔧 *Maintenance Logged (Pending)*\nVendor: {data.vendor_name}\nAmount: ₱{data.total_amount}\nService: {data.service_description}\nDate: {data.date}\nOdometer: {data.odometer_reading} km"
             is_valid_type = True
-            
-            # Call your Supabase insertion here
             insert_maintenance_receipt(driver_data, data, file_id)
             
         else:
             msg_text = "⚠️ Could not clearly identify this as a fuel or maintenance receipt. Please ensure the photo is clear."
 
-        # 4. Dispatch the extracted data back to the driver
+        # 4. Dispatch data and buttons
         payload = {
             "chat_id": chat_id,
             "text": msg_text,
             "parse_mode": "Markdown"
         }
         
-        # Append inline keyboard if it's a valid parsed receipt type
         if is_valid_type:
             payload["reply_markup"] = {
                 "inline_keyboard": [
-                    [
-                        {"text": "✅ Confirm & Lock Data", "callback_data": "verify_confirm"}
-                    ],
-                    [
-                        {"text": "🔄 Redo AI Analysis", "callback_data": "verify_redo"}
-                    ],
+                    [{"text": "✅ Confirm & Lock Data", "callback_data": "verify_confirm"}],
+                    [{"text": "🔄 Redo AI Analysis", "callback_data": "verify_redo"}],
                     [
                         {"text": "📸 Retake Odometer", "callback_data": "verify_retake_odo"},
                         {"text": "🧾 Retake Receipt", "callback_data": "verify_retake_rcpt"}
@@ -175,11 +164,11 @@ async def process_telegram_webhook_background(driver_data: dict, file_id: str, c
 # --- Primary Endpoints ---
 
 @app.post("/telegram-webhook", dependencies=[Depends(verify_telegram_secret)])
-@limiter.limit("5/minute") # Anti-Spam Burst Limiter
+@limiter.limit("5/minute")
 async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
     payload = await request.json()
     
-    # Handle Telegram callback_query payloads natively
+    # 1. Intercept Callbacks FIRST
     if "callback_query" in payload:
         callback_query = payload["callback_query"]
         callback_data = callback_query.get("data")
@@ -187,87 +176,78 @@ async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
         chat_id = str(callback_query.get("message", {}).get("chat", {}).get("id"))
         message_id = callback_query.get("message", {}).get("message_id")
         
-        # Acknowledge the callback immediately to stop the loading spinner
+        # Grab the original message text so we don't accidentally delete the receipt details
+        original_text = callback_query.get("message", {}).get("text", "Receipt Data")
+        clean_text = original_text.replace("(Pending)", "")
+        
+        # Acknowledge immediately to kill loading spinner
         async with httpx.AsyncClient() as http:
             await http.post(
                 f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/answerCallbackQuery",
                 json={"callback_query_id": query_id}
             )
             
-        # Route the logic
+        # Route logic and edit the message in-place
         if callback_data == "verify_confirm":
             receipt_id = get_latest_pending_receipt_id(chat_id)
             if receipt_id:
                 update_receipt_status(receipt_id, "verified")
             
-            async with httpx.AsyncClient() as http:
-                await http.post(
-                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/editMessageText",
-                    json={
-                        "chat_id": chat_id,
-                        "message_id": message_id,
-                        "text": "✅ Data Locked."
-                    }
-                )
-        elif callback_data in ["verify_retake_odo", "verify_retake_rcpt"]:
-            msg = "📸 Please upload a clear photo of your Odometer." if callback_data == "verify_retake_odo" else "🧾 Please upload a clear photo of your Receipt."
-            async with httpx.AsyncClient() as http:
-                await http.post(
-                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-                    json={
-                        "chat_id": chat_id,
-                        "text": msg
-                    }
-                )
+            new_text = f"{clean_text}\n\n✅ *STATUS: VERIFIED & LOCKED*"
+            
         elif callback_data == "verify_redo":
-            async with httpx.AsyncClient() as http:
-                await http.post(
-                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-                    json={
-                        "chat_id": chat_id,
-                        "text": "🔄 Please upload the receipt photo again to re-trigger the AI Analysis."
-                    }
-                )
-                
+            # Just mark it rejected and ask for a new upload
+            new_text = f"{clean_text}\n\n❌ *STATUS: REJECTED*\nPlease upload a clearer photo of the receipt to redo the OCR."
+            
+        elif callback_data in ["verify_retake_odo", "verify_retake_rcpt"]:
+            photo_type = "Odometer" if callback_data == "verify_retake_odo" else "Receipt"
+            new_text = f"{clean_text}\n\n⏳ *STATUS: AWAITING RETAKE*\nPlease upload a clear photo of the {photo_type}."
+
+        # Execute the UI update (this removes the buttons and applies the new text)
+        async with httpx.AsyncClient() as http:
+            await http.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/editMessageText",
+                json={
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "text": new_text,
+                    "parse_mode": "Markdown"
+                }
+            )
+            
         return {"status": "callback_processed"}
 
+    # 2. Process Standard Image Messages
     message = payload.get("message", {})
     chat_id = str(message.get("chat", {}).get("id"))
     
-    # 1. Reject Albums/Media Groups to protect API economics
     if "media_group_id" in message:
         async with httpx.AsyncClient() as http:
             await http.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "⚠️ Please send single photos only."})
         return {"status": "rejected", "reason": "media_group_not_supported"}
 
-    # 2. Extract single photo file_id
     file_id = None
     if "photo" in message and isinstance(message["photo"], list):
-        file_id = message["photo"][-1]["file_id"] # Get highest res photo
+        file_id = message["photo"][-1]["file_id"] 
     elif "document" in message:
         file_id = message["document"]["file_id"]
         
     if not file_id:
         return {"status": "ignored", "reason": "no_valid_image"}
 
-    # 3. Pre-Flight Gatekeeper: Identify Active Driver
     driver = get_active_driver(chat_id)
     if not driver:
         async with httpx.AsyncClient() as http:
             await http.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "🚫 Unauthorized: Driver profile not found."})
         return {"status": "rejected", "reason": "unauthorized_driver"}
 
-    # 4. Pre-Flight Gatekeeper: Atomic Quota Deduction
-    has_quota = consume_quota(driver["operator_id"])
+    has_quota = consume_quota(driver.get("operator_id", ""))
     if not has_quota:
         async with httpx.AsyncClient() as http:
             await http.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": chat_id, "text": "💳 Operator monthly quota exceeded."})
         return {"status": "rejected", "reason": "quota_exceeded"}
 
-    # 5. Offload heavy lifting to background
     background_tasks.add_task(process_telegram_webhook_background, driver, file_id, chat_id)
-
-    # 6. Return 200 OK instantly to Telegram
     return {"status": "processing"}
 
 # --- OpenAPI Spec Routes ---
